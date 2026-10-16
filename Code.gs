@@ -12,7 +12,17 @@
  *   .../exec?page=admin → 後台管理頁（承辦人員用；?page=dashboard 也可以）
  *
  * Apps Script 專案裡的 HTML 檔名必須是 index、dashboard（不含 .html）
+ *
+ * 資料寫到哪個試算表：
+ * - 如果這支程式是從試算表「擴充功能 → Apps Script」建立的（綁定試算表），不用設定。
+ * - 如果是獨立的 Apps Script 專案，請把試算表網址中 /d/ 和 /edit 之間那串 ID
+ *   填到下面的 SPREADSHEET_ID，否則資料無處可寫。
+ *
+ * 網頁放在 GitHub Pages 時，網頁會改用 fetch 呼叫 doPost（見最下方），
+ * 部署時「誰可以存取」必須選「所有人」。
  */
+
+var SPREADSHEET_ID = '';
 
 var SHEET_SUBMIT = '打卡紀錄';
 var SHEET_GIFT    = '禮物狀態';
@@ -36,10 +46,45 @@ function doGet(e){
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
+// ---------------- 給 GitHub Pages 等外部網頁呼叫（fetch POST） ----------------
+// 網頁送來 {fn:'submitCheckin', args:[...]}，回傳 {ok:true, result:...}
+var PUBLIC_FUNCTIONS = {
+  submitCheckin: submitCheckin,
+  getData: getData,
+  setGiftStatus: setGiftStatus,
+  setNotebookStatus: setNotebookStatus
+};
+
+function doPost(e){
+  var out;
+  try{
+    var req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    var fn = PUBLIC_FUNCTIONS[req.fn];
+    if(!fn) throw new Error('未知的函式：' + req.fn);
+    out = {ok:true, result: fn.apply(null, req.args || [])};
+  }catch(err){
+    console.error(err);
+    out = {ok:false, error: String(err && err.message || err)};
+  }
+  return ContentService.createTextOutput(JSON.stringify(out))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 // ---------------- 給網頁呼叫的函式（google.script.run） ----------------
 
 // 情緒打卡頁送出資料
 function submitCheckin(data){
+  data = data || {};
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000); // 多人同時送出時排隊，避免列互相覆蓋
+  try{
+    return submitCheckinLocked_(data);
+  }finally{
+    lock.releaseLock();
+  }
+}
+
+function submitCheckinLocked_(data){
   var staffId = normId_(data.staffId);
   var shS = getSheet_(SHEET_SUBMIT, SUBMIT_HEADERS);
   shS.appendRow([
@@ -61,6 +106,7 @@ function submitCheckin(data){
     data.feedback || ''
   ]);
   ensureGiftRow_(staffId, data.name, data.unit);
+  SpreadsheetApp.flush();
   return {ok:true};
 }
 
@@ -110,8 +156,17 @@ function setNotebookStatus(staffId, status, name, unit){
 }
 
 // ---------------- 內部工具函式 ----------------
-function getSheet_(name, headers){
+function getSpreadsheet_(){
+  var id = SPREADSHEET_ID ||
+    PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
+  if(id) return SpreadsheetApp.openById(id);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
+  if(!ss) throw new Error('找不到試算表：請在 Code.gs 的 SPREADSHEET_ID 填入試算表 ID');
+  return ss;
+}
+
+function getSheet_(name, headers){
+  var ss = getSpreadsheet_();
   var sh = ss.getSheetByName(name);
   if(!sh){
     sh = ss.insertSheet(name);
@@ -130,7 +185,11 @@ function sheetToObjects_(sh){
     var row = values[i];
     if(row.join('') === '') continue;
     var obj = {};
-    for(var j=0;j<headers.length;j++){ obj[headers[j]] = row[j]; }
+    for(var j=0;j<headers.length;j++){
+      // google.script.run 無法回傳 Date 物件（整包資料會變 null），先轉成字串
+      var v = row[j];
+      obj[headers[j]] = (v instanceof Date) ? v.toISOString() : v;
+    }
     out.push(obj);
   }
   return out;
