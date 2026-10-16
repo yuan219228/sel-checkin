@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEL 情緒充電站｜後台管理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FCF1E1;
+    --paper:#FFF9F0;
+    --clay:#C96E45;
+    --clay-dark:#A5522C;
+    --clay-tint:#FBE1C5;
+    --sage:#AAA683;
+    --sage-tint:#EDEAD6;
+    --ink:#44240E;
+    --ink-soft:#8E7052;
+    --line:#EFD9C2;
+    --danger:#B23A2E;
+    --gold:#D9974A;
+    --gold-tint:#F3E7C9;
+    --radius:18px;
+    --radius-sm:10px;
+    --shadow:0 1px 2px rgba(68,36,14,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 500px at 10% -10%, #FBE1C5 0%, rgba(252,231,215,0) 60%),
+      radial-gradient(900px 400px at 100% 0%, #F3E4CE 0%, rgba(239,227,211,0) 55%),
+      var(--cream);
+    color:var(--ink);
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    min-height:100vh;
+    padding:28px 16px 60px;
+    line-height:1.6;
+  }
+  .wrap{max-width:1280px; margin:0 auto;}
+
+  .quicknav{
+    position:sticky; top:0; z-index:50;
+    display:flex; flex-wrap:wrap; gap:8px;
+    background:var(--cream); padding:10px 4px; margin:0 0 18px;
+    border-bottom:2px solid var(--clay); backdrop-filter:blur(2px);
+  }
+  .quicknav a{
+    font-size:13.5px; font-weight:700; color:var(--clay-dark);
+    background:var(--paper); border:1px solid var(--line); border-radius:999px;
+    padding:7px 15px; text-decoration:none; white-space:nowrap; transition:.15s;
+  }
+  .quicknav a:hover{background:var(--clay); color:#fff; border-color:var(--clay);}
+  html{scroll-behavior:smooth; scroll-padding-top:70px;}
+  .masthead{padding:2px 4px 20px;}
+  .masthead .eyebrow{font-size:14.5px; color:var(--clay-dark); font-weight:700;}
+  .masthead h1{font-family:"Noto Serif TC",serif; font-size:27px; font-weight:700; margin:6px 0 6px;}
+  .masthead p{margin:0; color:var(--ink-soft); font-size:13.5px;}
+
+  .load-bar, .filter-bar{
+    display:flex; gap:8px; flex-wrap:wrap;
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:12px; align-items:center;
+  }
+  .load-bar{margin:18px 0 10px;}
+  .filter-bar{margin-bottom:22px;}
+  .load-bar input[type="text"], .filter-bar input[type="text"], .filter-bar select{
+    flex:1; min-width:180px;
+    border:1px solid var(--line); background:var(--cream); border-radius:var(--radius-sm);
+    padding:10px 12px; font-size:13.5px; font-family:inherit; color:var(--ink); outline:none;
+  }
+  .filter-bar select{flex:0 0 150px; min-width:130px;}
+  .load-bar input:focus, .filter-bar input:focus, .filter-bar select:focus{border-color:var(--clay);}
+  .load-bar button{
+    font-family:inherit; font-size:13.5px; font-weight:500; border-radius:999px;
+    padding:10px 18px; border:none; cursor:pointer; background:var(--clay); color:#fff;
+  }
+  .load-bar button:hover{background:var(--clay-dark);}
+  .load-bar button.btn-demo{background:var(--sage-tint); color:#5E5B3D;}
+  .load-bar button.btn-demo:hover{background:#E2DEC0;}
+  .load-status{font-size:12px; color:var(--ink-soft); width:100%;}
+  .load-status.err{color:var(--danger);}
+  .filter-hint{font-size:12px; color:var(--ink-soft); width:100%;}
+
+  .stats-row{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:22px;
+  }
+  .stat-card{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 14px; box-shadow:var(--shadow);
+  }
+  .stat-card .num{font-family:"Noto Serif TC",serif; font-size:32px; color:var(--clay-dark); font-weight:700;}
+  .stat-card .lbl{font-size:13.5px; color:var(--ink-soft); margin-top:4px;}
+
+  .panel{
+    background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 22px 20px; box-shadow:var(--shadow); margin-bottom:20px;
+  }
+  .panel h2{font-family:"Noto Serif TC",serif; font-size:21px; margin:0 0 6px;}
+  .panel .sub{font-size:14px; color:var(--ink-soft); margin:0 0 16px;}
+
+  .bar-row{margin-bottom:12px;}
+  .bar-row .bar-top{display:flex; justify-content:space-between; font-size:15px; margin-bottom:6px; gap:8px;}
+  .bar-row .bar-top .cnt{color:var(--ink-soft); font-size:14px; white-space:nowrap; font-weight:700;}
+  .bar-track{height:14px; border-radius:7px; background:var(--cream); overflow:hidden;}
+  .bar-fill{height:100%; border-radius:5px; background:linear-gradient(90deg,var(--clay),#E8A070);}
+  .bar-fill.sage{background:linear-gradient(90deg,var(--sage),#C9C5A4);}
+  .bar-fill.gold{background:linear-gradient(90deg,var(--gold),#E0C36B);}
+
+  .empty{font-size:13.5px; color:var(--ink-soft); padding:6px 0;}
+
+  .unit-card{border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:12px; overflow:hidden;}
+  .unit-head{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    background:var(--clay-tint); padding:12px 14px; cursor:pointer; user-select:none;
+  }
+  .unit-head .name{font-weight:700; font-size:16.5px; color:var(--clay-dark);}
+  .stock-grid{display:grid; grid-template-columns:1fr; gap:14px;}
+  @media (min-width:700px){ .stock-grid{grid-template-columns:1fr 1fr;} }
+  .stock-card{border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px 16px; background:var(--paper);}
+  .stock-top{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;}
+  .stock-name{font-weight:700; font-size:14.5px; color:var(--clay-dark);}
+  .stock-edit{font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:6px;}
+  .stock-edit input{width:64px; padding:4px 7px; border:1px solid var(--line); border-radius:6px; font:inherit; font-size:12.5px; background:var(--cream); color:var(--ink);}
+  .stock-track{height:14px; border-radius:999px; background:var(--line); overflow:hidden;}
+  .stock-fill{height:100%; background:var(--sage); border-radius:999px; transition:width .2s;}
+  .stock-fill.low{background:var(--gold);}
+  .stock-fill.out{background:var(--clay);}
+  .stock-nums{margin-top:7px; font-size:12.5px; color:var(--ink);}
+  .stock-nums .warn{color:var(--clay-dark); font-weight:700;}
+  .stock-eligible{margin-top:3px; font-size:12px; color:var(--ink-soft);}
+  .feedback-toolbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
+  .feedback-toolbar input[type="text"]{flex:1 1 220px; min-width:180px; padding:9px 12px; border:1px solid var(--line); border-radius:999px; background:var(--cream); font:inherit; font-size:13px; color:var(--ink);}
+  .feedback-toolbar select{padding:9px 12px; border:1px solid var(--line); border-radius:999px; background:var(--cream); font:inherit; font-size:13px; color:var(--ink);}
+  .feedback-count{font-size:12px; color:var(--ink-soft); margin-left:auto;}
+  .quote-row .qtype{display:inline-block; font-size:10.5px; font-weight:700; background:var(--sage-tint); color:#4E5C44; border-radius:999px; padding:2px 9px; margin-right:6px;}
+  .two-col-events{display:grid; grid-template-columns:1fr; gap:22px;}
+  @media (min-width:800px){ .two-col-events{grid-template-columns:1fr 1fr;} }
+  .sub-h3{font-size:14.5px; font-weight:700; margin:0 0 10px; padding-bottom:6px; border-bottom:2px solid var(--line);}
+  .sub-h3.neg{color:var(--clay-dark); border-bottom-color:var(--clay);}
+  .sub-h3.pos{color:#4E5C44; border-bottom-color:var(--sage);}
+  .trend-legend{display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-bottom:10px; font-size:13.5px; font-weight:700; color:var(--ink);}
+  .trend-legend span{display:flex; align-items:center; gap:6px;}
+  .trend-legend i{display:inline-block; width:14px; height:14px; border-radius:4px;}
+  .trend-legend .trend-note{font-weight:400; font-size:12.5px; color:var(--ink-soft); margin-left:auto;}
+  .brief-panel{background:linear-gradient(135deg,#FCEFE0,var(--paper)); border:1px solid var(--clay); border-width:1.5px;}
+  .brief-grid{display:grid; grid-template-columns:1fr; gap:14px; margin-top:4px;}
+  @media (min-width:900px){ .brief-grid{grid-template-columns:1fr 1fr;} }
+  .brief-card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px 16px;}
+  .brief-q{font-size:14.5px; font-weight:700; color:var(--clay-dark); margin-bottom:7px;}
+  .brief-a{font-size:16px; color:var(--ink); line-height:1.8;}
+  .brief-a .hl{font-weight:700; color:var(--clay-dark);}
+  .brief-a .quote{display:block; margin-top:6px; font-size:12.5px; color:var(--ink-soft); font-style:italic;}
+  .stats-note{font-size:12px; color:var(--ink-soft); margin:-10px 0 20px; line-height:1.6;}
+  .rank-badge{display:inline-block; margin-left:8px; font-size:10.5px; font-weight:700; background:var(--clay); color:#fff; border-radius:999px; padding:2px 9px; vertical-align:middle;}
+  .unitmap-box{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px 16px; margin-bottom:14px;}
+  .unitmap-box summary{cursor:pointer; font-weight:700; font-size:13.5px; color:var(--clay-dark);}
+  .unitmap-box textarea{width:100%; min-height:90px; margin-top:10px; border:1px solid var(--line); border-radius:8px; padding:9px 11px; font:inherit; font-size:12.5px; background:var(--cream); color:var(--ink);}
+  .unitmap-box .row{display:flex; align-items:center; gap:10px; margin-top:8px; flex-wrap:wrap;}
+  .unitmap-box .load-bar-btn{background:var(--clay); color:#fff; border:none; border-radius:999px; padding:9px 20px; font:inherit; font-size:13px; font-weight:700; cursor:pointer;}
+  .unitmap-box .load-bar-btn:hover{background:var(--clay-dark);}
+  .unit-head .meta{font-size:14px; color:var(--ink); white-space:nowrap; font-weight:600;}
+  .unit-body{padding:6px 14px 4px; display:none;}
+  .unit-body.open{display:block;}
+  .person-row{
+    display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center;
+    padding:12px 0; border-bottom:1px dashed var(--line); font-size:14.5px;
+  }
+  .person-row:last-child{border-bottom:none;}
+  .person-row .p-name{font-weight:700; min-width:60px;}
+  .person-row .p-tag{color:var(--ink-soft); font-size:12px;}
+  .person-row .p-delta{font-weight:700;}
+  .person-row .p-delta.up{color:var(--clay-dark);}
+  .person-row .p-delta.down{color:#5E5B3D;}
+  .person-row .p-reason{flex-basis:100%; font-size:12px; color:var(--ink-soft); background:var(--cream); border-radius:8px; padding:5px 10px; margin-top:2px;}
+  .person-row .p-status{display:flex; flex-direction:column; align-items:flex-start; gap:2px; margin-left:10px;}
+  .person-row .p-status:first-of-type{margin-left:auto;}
+  .p-status-label{font-size:12px; color:var(--ink-soft);}
+  .status-select{
+    font-family:inherit; font-size:12px; border-radius:999px; border:1px solid var(--line);
+    padding:5px 10px; cursor:pointer; background:var(--cream); color:var(--ink);
+  }
+  .status-select.st-未通知{background:#F4EADD; color:var(--ink-soft);}
+  .status-select.st-待通知{background:var(--gold-tint); color:#8A6A1E;}
+  .status-select.st-已領取{background:var(--sage-tint); color:#5E5B3D;}
+  .status-select.st-未達成{background:#F3EDE6; color:var(--ink-soft);}
+  .status-select.st-可兌換{background:var(--gold-tint); color:#8A6A1E;}
+
+  .quad-wrap{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .quad-cell{
+    border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px;
+    background:var(--cream);
+  }
+  .quad-cell .qn{font-family:"Noto Serif TC",serif; font-size:24px; font-weight:700; color:var(--clay-dark);}
+  .quad-cell .ql{font-size:12.5px; margin-top:2px;}
+  .quad-cell .qs{font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .quad-axis{font-size:11.5px; color:var(--ink-soft); text-align:center; margin:10px 0 2px;}
+
+  .quote-row{
+    padding:10px 0; border-bottom:1px dashed var(--line); font-size:13px;
+  }
+  .quote-row:last-child{border-bottom:none;}
+  .quote-row .qtag{font-size:11.5px; color:var(--ink-soft); margin-top:3px;}
+
+  .month-row{
+    display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap;
+    padding:9px 0; border-bottom:1px dashed var(--line); font-size:13px;
+  }
+  .month-row:last-child{border-bottom:none;}
+  .month-row .m-label{font-weight:700; min-width:70px;}
+  .month-row .m-info{color:var(--ink-soft); font-size:14px;}
+
+  @media (min-width:720px){
+    .stats-row{grid-template-columns:repeat(5,1fr);}
+  }
+  @media (min-width:960px){
+    body{padding:48px 32px;}
+    .two-panel{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+    .two-panel .panel{margin-bottom:0;}
+  }
+.bun{width:1.4em;height:1.4em;display:inline-block;vertical-align:-0.35em;flex:none;overflow:visible}
+.bar-top .bun,.p-tag .bun{width:2.2em;height:2.2em;margin-right:3px}
+.masthead .eyebrow .bun{width:38px;height:38px;margin-right:4px;vertical-align:-0.5em}
+.qicons{display:flex;gap:2px;margin-bottom:6px}.qicons .bun{width:52px;height:52px}
+.sum-grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:820px){.sum-grid{grid-template-columns:1fr 1fr}}
+.sum-card{border:1px solid var(--line);border-radius:var(--radius);padding:20px;background:var(--cream)}
+.sum-card h3{margin:0 0 10px;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sum-icons{display:inline-flex}.sum-icons .bun{width:34px;height:34px;margin-right:-1px}
+.sum-moods{font-size:12px;color:var(--ink-soft);font-weight:400}
+.sum-big{font-family:"Noto Serif TC",serif;font-size:38px;font-weight:700;color:var(--clay-dark);line-height:1.2}
+.sum-big small{font-family:"Noto Sans TC",sans-serif;font-size:14px;font-weight:500;color:var(--ink);margin-left:6px}
+.sum-meta{font-size:12.5px;color:var(--ink-soft);margin:4px 0 12px}
+.sum-bar{display:flex;height:26px;border-radius:13px;overflow:hidden;background:var(--line);font-size:11.5px;line-height:26px;text-align:center;color:#fff;white-space:nowrap}
+.sum-bar span{overflow:hidden}
+.seg-good{background:var(--sage);color:#4A3A10}.seg-mid{background:#E8D9B8;color:var(--ink)}.seg-bad{background:var(--clay)}
+.sum-quote{background:var(--paper);border-left:4px solid var(--clay);border-radius:8px;padding:11px 13px;font-size:13.5px;line-height:1.75;margin-top:14px}
+.sum-card.pos .sum-quote{border-left-color:var(--sage)}
+.sum-copy{font-family:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 14px;margin-top:10px;cursor:pointer}
+.sum-copy:hover{border-color:var(--clay)}
+.sum-barlabel{font-size:12px;color:var(--ink-soft);margin:12px 0 4px}
+.sum-note{font-size:12px;color:var(--ink-soft);margin-top:10px}
+.filter-bar #valenceFilter{flex:0 0 150px}
+.filter-bar #dateRangeFilter{flex:0 0 170px}
+
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><radialGradient id="bunG" cx="35%" cy="28%" r="80%"><stop offset="0" stop-color="#FFEEDD"/><stop offset=".6" stop-color="#FCDCC4"/><stop offset="1" stop-color="#EDB894"/></radialGradient><symbol id="bun-happy" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="41" r="2.9" fill="#33241B" stroke="none"/><circle cx="24.9" cy="40.1" r="1.04" fill="#fff" stroke="none"/><circle cx="40" cy="41" r="2.9" fill="#33241B" stroke="none"/><circle cx="40.9" cy="40.1" r="1.04" fill="#fff" stroke="none"/><path d="M28.500 46q3.500 3.500 7 0"/></g><ellipse cx="8.500" cy="43" rx="3.800" ry="5.500" transform="rotate(12 8.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><ellipse cx="55.500" cy="43" rx="3.800" ry="5.500" transform="rotate(-12 55.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-joy" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 42.500q3-5 6 0M37 42.500q3-5 6 0" stroke-width="2.200"/><path d="M28 45.500q4 7 8 0z" fill="#E56B7A" stroke-width="1.800"/><path d="M11 21.5q.5 3 3.500 3.500q-3 .5-3.500 3.500q-.5-3-3.500-3.500q3-.5 3.500-3.500z" fill="#F2B93B" stroke="none"/><path d="M54 21.5q.5 3 3.500 3.500q-3 .5-3.500 3.500q-.5-3-3.500-3.500q3-.5 3.500-3.500z" fill="#F2B93B" stroke="none"/></g><ellipse cx="8.500" cy="43" rx="3.800" ry="5.500" transform="rotate(12 8.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><ellipse cx="55.500" cy="43" rx="3.800" ry="5.500" transform="rotate(-12 55.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-calm" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 41q3 3 6 0M37 41q3 3 6 0" stroke-width="2.200"/><path d="M30 46q2 1.800 4 0"/><circle cx="51" cy="24" r="1.900" fill="#A68BB5" stroke="none"/><path d="M52.900 24V16q3 .8 3 4" stroke="#A68BB5" stroke-width="1.500"/></g><ellipse cx="8.500" cy="43" rx="3.800" ry="5.500" transform="rotate(12 8.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><ellipse cx="55.500" cy="43" rx="3.800" ry="5.500" transform="rotate(-12 55.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-tired" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 41.500h6M37 41.500h6" stroke-width="2.200"/><path d="M22 45q2 1.500 4 0M38 45q2 1.500 4 0" stroke-width="1.300" opacity=".5"/><ellipse cx="32" cy="48" rx="1.900" ry="2.400" fill="#33241B" stroke="none"/><path d="M44 22h7l-7 7h7M52 17h5l-5 5h5M57.500 13.500h3.500l-3.500 3.500h3.500" stroke="#5B7DB1" stroke-width="1.700"/></g><ellipse cx="8.500" cy="43" rx="3.800" ry="5.500" transform="rotate(12 8.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><ellipse cx="55.500" cy="43" rx="3.800" ry="5.500" transform="rotate(-12 55.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-anxious" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.500 36.500q3.500-3 7.500-1.500M43.500 36.500q-3.500-3-7.500-1.500" stroke-width="1.700"/><circle cx="24" cy="41.5" r="2.9" fill="#33241B" stroke="none"/><circle cx="24.9" cy="40.6" r="1.04" fill="#fff" stroke="none"/><circle cx="40" cy="41.5" r="2.9" fill="#33241B" stroke="none"/><circle cx="40.9" cy="40.6" r="1.04" fill="#fff" stroke="none"/><path d="M28 48q1.500-2 3 0t3 0t3 0" stroke-width="1.800"/><path d="M53 26q-3 4-1 6t4 0q1-2-3-6z" fill="#8CC4EE" stroke="#5B9BD5" stroke-width="1"/><path d="M11 29q-2 3-.5 4.500t3 0q.5-1.500-2.500-4.500z" fill="#8CC4EE" stroke="#5B9BD5" stroke-width="1"/></g><ellipse cx="8.500" cy="43" rx="3.800" ry="5.500" transform="rotate(12 8.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><ellipse cx="55.500" cy="43" rx="3.800" ry="5.500" transform="rotate(-12 55.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-irritated" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19.500 35l8.500 4M44.500 35l-8.500 4" stroke-width="2.400"/><circle cx="24" cy="42" r="2.6" fill="#33241B" stroke="none"/><circle cx="24.9" cy="41.1" r="0.94" fill="#fff" stroke="none"/><circle cx="40" cy="42" r="2.6" fill="#33241B" stroke="none"/><circle cx="40.9" cy="41.1" r="0.94" fill="#fff" stroke="none"/><path d="M29 48.500q3-2.500 6 0" stroke-width="2"/><path d="M49.500 18.500l4.500 4.500M54 18.500l-4.500 4.500" stroke="#E5534B" stroke-width="2.400"/></g><ellipse cx="8.500" cy="43" rx="3.800" ry="5.500" transform="rotate(12 8.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><ellipse cx="55.500" cy="43" rx="3.800" ry="5.500" transform="rotate(-12 55.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-sad" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 38l7-3M44 38l-7-3" stroke-width="1.800"/><circle cx="24" cy="41.500" r="2.500" fill="#33241B" stroke="none"/><circle cx="40" cy="41.500" r="2.500" fill="#33241B" stroke="none"/><path d="M28 49q4-3.500 8 0"/><path d="M22 45q-1.500 3 0 4.500T24.500 45z" fill="#8CC4EE" stroke="none"/></g><ellipse cx="8.500" cy="43" rx="3.800" ry="5.500" transform="rotate(12 8.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><ellipse cx="55.500" cy="43" rx="3.800" ry="5.500" transform="rotate(-12 55.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-wronged" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 37l7-2M44 37l-7-2" stroke-width="1.600"/><circle cx="24" cy="41" r="3.800" fill="#33241B" stroke="none"/><circle cx="40" cy="41" r="3.800" fill="#33241B" stroke="none"/><circle cx="25.200" cy="39.800" r="1.300" fill="#fff" stroke="none"/><circle cx="41.200" cy="39.800" r="1.300" fill="#fff" stroke="none"/><circle cx="22.800" cy="43" r=".8" fill="#fff" stroke="none"/><circle cx="38.800" cy="43" r=".8" fill="#fff" stroke="none"/><path d="M27 49q1.500-2 3 0t3 0t3 0" stroke-width="1.700"/><path d="M20 46q-1.500 3 0 4.500T22.500 46zM44 46q-1.500 3 0 4.500T46.500 46z" fill="#8CC4EE" stroke="none"/></g><ellipse cx="8.500" cy="43" rx="3.800" ry="5.500" transform="rotate(12 8.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><ellipse cx="55.500" cy="43" rx="3.800" ry="5.500" transform="rotate(-12 55.500 43)" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-aware" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 42q3-5 6 0M37 42q3-5 6 0"/><path d="M27 46q5 4 10 0"/></g><g transform="translate(32 55) scale(.85) translate(-32 -55)"><path d="M32 56C21 48 19 42 23 39c3-2 7-.5 9 2 2-2.500 6-4 9-2 4 3 2 9-9 17z" fill="#EE9977" stroke="#fff" stroke-opacity=".35" stroke-width="1"/></g><circle cx="21.500" cy="47" r="3.600" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><circle cx="42.500" cy="47" r="3.600" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-manage" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="41" r="2.9" fill="#33241B" stroke="none"/><circle cx="24.9" cy="40.1" r="1.04" fill="#fff" stroke="none"/><circle cx="40" cy="41" r="2.9" fill="#33241B" stroke="none"/><circle cx="40.9" cy="40.1" r="1.04" fill="#fff" stroke="none"/><path d="M28.500 46q3.500 3.500 7 0"/></g><g transform="translate(32 55) scale(.85) translate(-32 -55)"><circle cx="28" cy="45" r="6.500" fill="#fff" fill-opacity=".45" stroke="#559491" stroke-width="3.500"/><path d="M33 50l6 6" stroke="#559491" stroke-width="4" stroke-linecap="round"/></g><circle cx="21.500" cy="47" r="3.600" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><circle cx="42.500" cy="47" r="3.600" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-social" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 42.500q3-5 6 0M37 42.500q3-5 6 0" stroke-width="2.200"/><path d="M28 45.500q4 7 8 0z" fill="#E56B7A" stroke-width="1.800"/><path d="M11 21.5q.5 3 3.500 3.500q-3 .5-3.500 3.500q-.5-3-3.500-3.500q3-.5 3.500-3.500z" fill="#F2B93B" stroke="none"/><path d="M54 21.5q.5 3 3.500 3.500q-3 .5-3.500 3.500q-.5-3-3.500-3.500q3-.5 3.500-3.500z" fill="#F2B93B" stroke="none"/></g><g transform="translate(32 55) scale(.85) translate(-32 -55)"><path d="M32 56C21 48 19 42 23 39c3-2 7-.5 9 2 2-2.500 6-4 9-2 4 3 2 9-9 17z" fill="#A68BB5" stroke="#fff" stroke-opacity=".35" stroke-width="1"/></g><circle cx="21.500" cy="47" r="3.600" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><circle cx="42.500" cy="47" r="3.600" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-skill" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="41" r="2.9" fill="#33241B" stroke="none"/><circle cx="24.9" cy="40.1" r="1.04" fill="#fff" stroke="none"/><circle cx="40" cy="41" r="2.9" fill="#33241B" stroke="none"/><circle cx="40.9" cy="40.1" r="1.04" fill="#fff" stroke="none"/><path d="M28.500 46q3.500 3.500 7 0"/></g><g transform="translate(32 55) scale(.85) translate(-32 -55)"><rect x="22" y="43" width="10" height="11" rx="1.500" fill="#E1A159"/><rect x="32" y="43" width="10" height="11" rx="1.500" fill="#AAA683"/><circle cx="27" cy="42.500" r="2.200" fill="#E1A159"/><circle cx="32" cy="48.500" r="2.200" fill="#E1A159"/><circle cx="37" cy="54.500" r="2.200" fill="#AAA683"/></g><circle cx="21.500" cy="47" r="3.600" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><circle cx="42.500" cy="47" r="3.600" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol><symbol id="bun-decide" viewBox="2 6 60 57"><ellipse cx="32" cy="59.500" rx="17" ry="2.200" fill="#E3C3A2" opacity=".55"/><ellipse cx="24" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><ellipse cx="40" cy="55.500" rx="5.500" ry="3.200" fill="#EDB58D" stroke="#D9A07A" stroke-width="1"/><g fill="#EDBB92" stroke="#D9A57C" stroke-width="1"><circle cx="25.500" cy="13" r="4.200"/><circle cx="38.500" cy="13" r="4.200"/><circle cx="32" cy="11" r="4.600"/></g><path d="M32 13C17 13 7 24 7 37c0 11 9 16 25 16s25-5 25-16C57 24 47 13 32 13z" fill="url(#bunG)" stroke="#E2B08A" stroke-width="1.200"/><path d="M28 15.500q-1.500 3-2.500 5.500M36 15.500q1.500 3 2.500 5.500M32 15v5" stroke="#E2B08A" stroke-width="1.300" fill="none" stroke-linecap="round"/><ellipse cx="22" cy="24" rx="4" ry="2.200" transform="rotate(-35 22 24)" fill="#fff" opacity=".45"/><circle cx="19.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><circle cx="44.500" cy="40" r="3.400" fill="#FCB59A" opacity=".8"/><g transform="translate(0,-7)" fill="none" stroke="#33241B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="41" r="2.9" fill="#33241B" stroke="none"/><circle cx="24.9" cy="40.1" r="1.04" fill="#fff" stroke="none"/><circle cx="40" cy="41" r="2.9" fill="#33241B" stroke="none"/><circle cx="40.9" cy="40.1" r="1.04" fill="#fff" stroke="none"/><path d="M28.500 46q3.500 3.500 7 0"/></g><g transform="translate(32 55) scale(.85) translate(-32 -55)"><circle cx="32" cy="48" r="9" fill="#559491"/><circle cx="32" cy="48" r="6" fill="#F6EAD8"/><circle cx="32" cy="48" r="3.600" fill="#559491"/><circle cx="32" cy="48" r="1.300" fill="#EE9977"/><path d="M32 48l8-8" stroke="#E1A159" stroke-width="1.800" stroke-linecap="round"/></g><circle cx="21.500" cy="47" r="3.600" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/><circle cx="42.500" cy="47" r="3.600" fill="#F6D2B4" stroke="#E2B08A" stroke-width="1"/></symbol></defs></svg>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="eyebrow"><svg class="bun" aria-hidden="true"><use href="#bun-happy"/></svg>活動管理後台</div>
+    <h1>情緒充電站｜成果總覽</h1>
+    <p>個人資料限活動承辦人員查看，請勿轉傳此頁面連結。</p>
+  </div>
+
+  <nav class="quicknav">
+    <a href="#panel-brief">摘要</a>
+    <a href="#panel-stock">贈品庫存</a>
+    <a href="#panel-summary">呼吸成效</a>
+    <a href="#panel-units">部門分析</a>
+    <a href="#panel-trend">情緒趨勢</a>
+    <a href="#panel-emotion">情緒分布</a>
+    <a href="#panel-events">事件分析</a>
+    <a href="#panel-moodeffect">各感受成效</a>
+    <a href="#panel-month">月度變化</a>
+    <a href="#panel-feedback">開放留言</a>
+  </nav>
+
+  <div class="load-bar">
+    <button onclick="loadData()">重新整理資料</button>
+    <button class="btn-demo" onclick="loadDemoData()">產生示範資料（僅預覽畫面）</button>
+    <div class="load-status" id="loadStatus"></div>
+  </div>
+  <div class="load-bar" style="margin-top:8px;">
+    <label style="font-size:12.5px;color:var(--ink-soft);white-space:nowrap;">筆兌換門檻（累積打卡天數）</label>
+    <input type="number" id="penThreshold" value="3" min="1" max="30" style="max-width:90px;" oninput="applyFilters()">
+    <label style="font-size:12.5px;color:var(--ink-soft);white-space:nowrap;">筆記本兌換門檻</label>
+    <input type="number" id="notebookThreshold" value="5" min="1" max="30" style="max-width:90px;" oninput="applyFilters()">
+    <div class="filter-hint">兩個門檻都用「累積打卡天數」（依打卡紀錄的時間戳記，算出不重複的日期數，同一天打卡多次只算 1 天）自動計算，達到門檻會自動標示「可兌換」，活動人員仍可手動改成「已領取」。</div>
+  </div>
+
+  <details class="unitmap-box">
+    <summary>部門對照表（選填）── 目前已套用 <span id="unitMapCount">0</span> 筆，用來把人事號對應到部門，讓下方「依單位分組」能顯示部門別分析</summary>
+    <p style="font-size:12px;color:var(--ink-soft);margin:10px 0 0;">表單本身不收集單位，只要人資提供「人事號、部門」對照，貼在下面就能依部門看壓力分布。每行一筆，人事號和部門之間用逗號或 Tab 分隔，例如：<br><code>B50636,護理部</code></p>
+    <textarea id="unitMapInput" placeholder="B50636,護理部&#10;E0002,內科部門&#10;E0003,藥劑部"></textarea>
+    <div class="row">
+      <button class="load-bar-btn" onclick="applyUnitMap()">套用對照表</button>
+      <span id="unitMapStatus" style="font-size:12px;color:var(--ink-soft);"></span>
+    </div>
+    <p style="font-size:11.5px;color:var(--ink-soft);margin:8px 0 0;">這份對照表只存在你目前使用的這台瀏覽器裡，不會送到任何地方，換一台電腦要重新貼一次。</p>
+  </details>
+
+  <div class="filter-bar">
+    <input type="text" id="searchBox" placeholder="搜尋姓名／單位／職稱／人事號／Email" oninput="applyFilters()">
+    <select id="dateRangeFilter" onchange="applyFilters()">
+      <option value="all">時間範圍：全部</option>
+      <option value="thisWeek">本週（週一至今）</option>
+      <option value="last7">最近 7 天</option>
+      <option value="thisMonth">本月</option>
+      <option value="last30">最近 30 天</option>
+    </select>
+    <select id="statusFilter" onchange="applyFilters()">
+      <option value="all">筆的狀態：全部</option>
+      <option value="未達成">未達成</option>
+      <option value="可兌換">可兌換</option>
+      <option value="已領取">已領取</option>
+    </select>
+    <select id="moodFilter" onchange="applyFilters()">
+      <option value="all">感受：全部</option>
+      <option value="開心">開心</option>
+      <option value="快樂">快樂</option>
+      <option value="平靜">平靜</option>
+      <option value="疲累">疲累</option>
+      <option value="焦慮">焦慮</option>
+      <option value="煩躁">煩躁</option>
+      <option value="低落">低落</option>
+      <option value="委屈">委屈</option>
+    </select>
+    <select id="valenceFilter" onchange="applyFilters()">
+      <option value="all">感受類型：全部</option>
+      <option value="neg">負向感受</option>
+      <option value="pos">正向感受</option>
+    </select>
+    <div class="filter-hint" id="filterHint"></div>
+  </div>
+
+  <div class="panel brief-panel" id="panel-brief">
+    <h2 id="briefTitle">本週摘要</h2>
+    <p class="sub">把下面所有區塊最關鍵的答案整理成一段話，想看細節再往下滑。會跟著上面的「時間範圍」篩選一起變動。</p>
+    <div class="brief-grid">
+      <div class="brief-card">
+        <div class="brief-q">同仁這段期間的情緒是？</div>
+        <div class="brief-a" id="briefMood">尚未載入資料。</div>
+      </div>
+      <div class="brief-card">
+        <div class="brief-q">呼吸練習真的有效嗎？</div>
+        <div class="brief-a" id="briefBreathing">尚未載入資料。</div>
+      </div>
+      <div class="brief-card">
+        <div class="brief-q">是什麼在影響情緒？</div>
+        <div class="brief-a" id="briefEvents">尚未載入資料。</div>
+      </div>
+      <div class="brief-card">
+        <div class="brief-q">他們需要哪些支持？</div>
+        <div class="brief-a" id="briefSupport">尚未載入資料。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="num" id="statTotal">–</div><div class="lbl">總留言數</div></div>
+    <div class="stat-card"><div class="num" id="statPeople">–</div><div class="lbl">不重複填答人數</div></div>
+    <div class="stat-card"><div class="num" id="statAvgBefore">–</div><div class="lbl">負向感受｜平均強度（前）</div></div>
+    <div class="stat-card"><div class="num" id="statAvgAfter">–</div><div class="lbl">負向感受｜平均強度（後）</div></div>
+    <div class="stat-card"><div class="num" id="statAvgDelta">–</div><div class="lbl">負向感受｜平均下降幅度</div></div>
+  </div>
+  <p class="stats-note">這三個強度數字只算「負向感受」（疲累、焦慮、煩躁、低落、委屈），因為負向感受是「強度下降＝變好」，正向感受則是「強度上升＝變好」，兩種方向相反，混在一起平均會互相抵銷、失去意義。正向感受的成效請看下方「呼吸練習成效摘要」裡的正向卡片。</p>
+
+  <div class="panel" id="panel-stock">
+    <h2>贈品庫存</h2>
+    <p class="sub">「已領取」是指後台裡被手動標成「已領取」的人數，不是「已達成資格」的人數。總數量可以自行調整，會存在這台瀏覽器裡。</p>
+    <div class="stock-grid">
+      <div class="stock-card" id="stockPenCard">
+        <div class="stock-top">
+          <span class="stock-name"><svg class="bun" aria-hidden="true" style="width:1.3em;height:1.3em;vertical-align:-0.3em;"><use href="#bun-happy"/></svg>筆</span>
+          <span class="stock-edit">總數量 <input type="number" id="penStockTotal" value="295" min="0" oninput="renderStock()"></span>
+        </div>
+        <div class="stock-track"><div class="stock-fill" id="penStockFill"></div></div>
+        <div class="stock-nums" id="penStockNums">已領取 0／295・剩餘 295</div>
+        <div class="stock-eligible" id="penStockEligible">已達成資格 0 人</div>
+      </div>
+      <div class="stock-card" id="stockNotebookCard">
+        <div class="stock-top">
+          <span class="stock-name"><svg class="bun" aria-hidden="true" style="width:1.3em;height:1.3em;vertical-align:-0.3em;"><use href="#bun-joy"/></svg>情緒記錄本</span>
+          <span class="stock-edit">總數量 <input type="number" id="notebookStockTotal" value="295" min="0" oninput="renderStock()"></span>
+        </div>
+        <div class="stock-track"><div class="stock-fill" id="notebookStockFill"></div></div>
+        <div class="stock-nums" id="notebookStockNums">已領取 0／295・剩餘 295</div>
+        <div class="stock-eligible" id="notebookStockEligible">已達成資格 0 人</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-summary">
+    <h2>呼吸練習成效摘要</h2>
+    <p class="sub">依「此刻感受」的正負向分開計算：負向感受看「強度下降多少」；正向感受看填答者自評的「心情是否維持或更好」。此區不受「感受類型」篩選影響。</p>
+    <div id="summaryWrap"><div class="empty">尚未載入資料。</div></div>
+  </div>
+
+  <div class="panel" id="panel-units">
+    <h2>依單位分組・禮物領取狀態</h2>
+    <p class="sub">同單位的人排在同一區；每人只算一筆（依人事號去重）。累積打卡滿「筆」的門檻（預設 3 天）會自動標示「可兌換」，滿「筆記本」的門檻（預設 5 天，已包含筆的資格）也會自動標示，兩者都可以手動切換成「已領取」。</p>
+    <div id="unitsWrap"><div class="empty">尚未載入資料。</div></div>
+  </div>
+
+  <div class="panel" id="panel-emotion">
+    <h2>情緒二維分布（Russell 情緒環狀模型）</h2>
+    <p class="sub">橫軸是正負向（效價），縱軸是能量高低（喚起度）。可以分清楚「累」跟「躁」是不同種類的辛苦。</p>
+    <div class="quad-wrap" id="quadWrap"><div class="empty">尚未載入資料。</div></div>
+  </div>
+
+  <div class="two-panel">
+    <div class="panel">
+      <h2>此刻感受分布</h2>
+      <p class="sub">填答當下最接近的感受，各選項被選的次數。</p>
+      <div id="moodWrap"><div class="empty">尚未載入資料。</div></div>
+    </div>
+    <div class="panel">
+      <h2>身體訊號分布</h2>
+      <p class="sub">身體正在提醒的感覺，可複選，故總數會大於留言數。</p>
+      <div id="bodyWrap"><div class="empty">尚未載入資料。</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-events" style="margin-top:20px;">
+    <h2>影響此情緒的事件</h2>
+    <p class="sub">剛才發生了什麼，可複選，故總數會大於留言數。負向事件只統計「負向感受」的那幾筆、正向事件只統計「正向感受」的那幾筆，分開看才看得出來哪些事真正讓人緊繃、哪些事真正讓人開心，混在一起排名會互相稀釋。</p>
+    <div class="two-col-events">
+      <div>
+        <h3 class="sub-h3 neg">負向事件（疲累・焦慮・煩躁・低落・委屈）</h3>
+        <div id="stressorNegWrap"><div class="empty">尚未載入資料。</div></div>
+      </div>
+      <div>
+        <h3 class="sub-h3 pos">正向事件（開心・快樂・平靜）</h3>
+        <div id="stressorPosWrap"><div class="empty">尚未載入資料。</div></div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div class="two-panel" id="panel-moodeffect">
+    <div class="panel">
+      <h2>呼吸練習對哪種感受最有效？</h2>
+      <p class="sub">依「此刻感受」分組後，平均下降幾分。可用來決定要不要為不同感受設計不同的介入方式。</p>
+      <div id="moodDeltaWrap"><div class="empty">尚未載入資料。</div></div>
+    </div>
+    <div class="panel">
+      <h2>呼吸前後差異分布</h2>
+      <p class="sub">正值代表呼吸練習後情緒強度下降（變平靜）。</p>
+      <div id="deltaWrap"><div class="empty">尚未載入資料。</div></div>
+    </div>
+  </div>
+
+  <div class="two-panel" style="margin-top:0;">
+    <div class="panel">
+      <h2>依時段分布</h2>
+      <p class="sub">依填答時間分成三個時段，看哪個時段情緒強度普遍偏高，可對應排班討論。</p>
+      <div id="timeslotWrap"><div class="empty">尚未載入資料。</div></div>
+    </div>
+    <div class="panel">
+      <h2>依職類分布</h2>
+      <p class="sub">依「職稱」分組（醫師／護理師／心理師／社工師／藥師／行政人員等）。</p>
+      <div id="roleWrap"><div class="empty">尚未載入資料。</div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-trend">
+    <h2>情緒強度趨勢（折線圖）</h2>
+    <p class="sub">依日期畫出「負向感受」平均強度的變化：橘線是呼吸前，綠線是呼吸後，兩線距離越大，代表當天呼吸練習的效果越明顯。滑鼠移到點上可以看到數字跟當天筆數。</p>
+    <div id="trendWrap"><div class="empty">尚未載入資料。</div></div>
+  </div>
+
+  <div class="panel" id="panel-month">
+    <h2>事件隨月份的變化</h2>
+    <p class="sub">每個月最常出現的事件（好的與不好的都算），方便對照院內狀況（例如流感季、人力短缺、表揚活動）。</p>
+    <div id="monthWrap"><div class="empty">尚未載入資料。</div></div>
+  </div>
+
+  <div class="panel" id="panel-feedback">
+    <h2>開放式留言整理</h2>
+    <p class="sub">把三個開放式欄位集中在一起，方便你定期匯出、跟主管討論：「希望單位提供的支持」「想對自己說的話」這兩項現在是必填，筆數應該會接近總留言數；「其他」事件的補充說明仍是選填，只有選了「其他」標籤的人才會有。</p>
+    <div class="feedback-toolbar">
+      <input type="text" id="feedbackSearch" placeholder="搜尋留言內容的關鍵字" oninput="renderFeedback()">
+      <select id="feedbackTypeFilter" onchange="renderFeedback()">
+        <option value="all">類型：全部</option>
+        <option value="希望支持">希望單位提供的支持</option>
+        <option value="想對自己說">想對自己說的話</option>
+        <option value="其他說明">「其他」事件的補充說明</option>
+      </select>
+      <button class="load-bar-btn" onclick="exportFeedbackCsv()">匯出 CSV</button>
+      <span id="feedbackCount" class="feedback-count"></span>
+    </div>
+    <div id="feedbackWrap"><div class="empty">尚未載入資料。</div></div>
+  </div>
+
+</div>
+
+<script>
+  let allSubmissions = [];
+  let statusMap = {}; // staffId -> {status, name, unit, updatedAt}
+  let notebookMap = {}; // staffId -> {status, name, unit, updatedAt}
+  let dailyRecords = []; // {staffId, date}
+  let filtered = [];
+  let baseFiltered = [];
+  let usingDemo = false;
+
+  const MOOD_META = {
+    '快樂':  {q:'正向・高喚起', axis:[0.9, 0.75]},
+    '開心':  {q:'正向・低喚起', axis:[0.65, 0.15]},
+    '平靜':  {q:'正向・低喚起', axis:[0.55, -0.55]},
+    '疲累':  {q:'負向・低喚起', axis:[-0.4, -0.7]},
+    '焦慮':  {q:'負向・高喚起', axis:[-0.7, 0.7]},
+    '煩躁':  {q:'負向・高喚起', axis:[-0.6, 0.8]},
+    '低落':  {q:'負向・低喚起', axis:[-0.7, -0.5]},
+    '委屈':  {q:'負向・高喚起', axis:[-0.5, 0.25]}
+  };
+  const QUADRANTS = ['正向・高喚起','正向・低喚起','負向・高喚起','負向・低喚起'];
+  const QUADRANT_DESC = {
+    '正向・高喚起':'有活力的好心情，例如快樂',
+    '正向・低喚起':'放鬆、滿足，例如平靜、開心',
+    '負向・高喚起':'緊繃、想動但動不了，例如焦慮、煩躁、委屈',
+    '負向・低喚起':'能量耗盡，例如疲累、低落'
+  };
+
+  window.addEventListener('DOMContentLoaded', ()=>{
+    loadUnitMap();
+    try{
+      const pt = localStorage.getItem('sel_pen_stock_total');
+      const nt = localStorage.getItem('sel_notebook_stock_total');
+      if(pt !== null) document.getElementById('penStockTotal').value = pt;
+      if(nt !== null) document.getElementById('notebookStockTotal').value = nt;
+    }catch(e){}
+    loadData();
+  });
+
+  // ---------------- 示範資料 ----------------
+  function loadDemoData(){
+    usingDemo = true;
+    const units = ['護理部','內科部','外科部','教學部','藥劑部','行政部','急診部'];
+    const unitWeights = [16, 8, 7, 5, 4, 4, 6];
+    const surnames = ['王','林','陳','張','李','黃','吳','劉','蔡','楊','許','鄭'];
+    const givenChars = ['婷','安','君','偉','芳','宏','雯','翔','萱','哲','玲','豪','珮','琪','宇','珊'];
+    const titlesByUnit = {
+      '護理部':['護理師','個案管理師'],
+      '內科部':['醫師','護理師'],
+      '外科部':['醫師','護理師'],
+      '教學部':['行政人員','個案管理師'],
+      '藥劑部':['藥師'],
+      '行政部':['行政人員'],
+      '急診部':['醫師','護理師','社工師']
+    };
+    const extraTitles = ['心理師','社工師','檢驗師'];
+    const moods = ['開心','快樂','平靜','疲累','焦慮','煩躁','低落','委屈'];
+    const moodWeights = [6,5,14,20,15,12,9,7];
+    const bodyOptions = ['頭部緊繃','肩頸僵硬','胸口悶','心跳加快','胃部不適','全身放鬆','呼吸順暢','精神飽滿','胸口暖暖的','肩頸輕鬆','心跳平穩','沒有明顯感覺'];
+    const stressorOptions = ['人力不足或臨時請假','排班或班表安排','加班或超時待命','跨單位溝通或協調','病人或家屬情緒衝突','緊急或高風險個案','文書作業或系統操作','設備物資或空間不足','帶教新人或學生','家庭或個人生活','同事互相補位幫忙','主管或同事的肯定','病人或家屬的感謝','排班符合自己需求','順利完成困難任務','學到新技能或知識','準時下班休息充足','其他'];
+    const stressorOtherSamples = ['其他：設備故障','其他：交班沒接好','其他：臨時加班'];
+    const reframeSamples = [
+      '我現在很累，不代表我做得不夠好。',
+      '先深呼吸，一件一件處理就好。',
+      '今天已經很努力了，可以先休息一下。',
+      '這不是我一個人的問題，可以找同事討論。',
+      ''
+    ];
+    const feedbackSamples = [
+      '希望排班能更有彈性',
+      '希望增加人手，尖峰時段真的很吃緊',
+      '希望能有固定的紓壓時段',
+      '', '', '',
+      '希望主管可以多聽第一線的聲音',
+      '希望這種活動可以常態舉辦'
+    ];
+    function pickWeighted(list, weights){
+      const total = weights.reduce((a,b)=>a+b,0);
+      let r = Math.random()*total;
+      for(let i=0;i<list.length;i++){ r -= weights[i]; if(r<=0) return list[i]; }
+      return list[list.length-1];
+    }
+    function pickSome(list, min, max){
+      const n = Math.floor(Math.random()*(max-min+1))+min;
+      const copy = [...list]; const out = [];
+      for(let i=0;i<n && copy.length;i++){ out.push(copy.splice(Math.floor(Math.random()*copy.length),1)[0]); }
+      return out;
+    }
+    function randomTimestamp(){
+      const now = Date.now();
+      const daysAgo = Math.floor(Math.random()*42); // 過去 6 週內
+      const hour = Math.floor(Math.random()*24);
+      const d = new Date(now - daysAgo*86400000);
+      d.setHours(hour, Math.floor(Math.random()*60), 0, 0);
+      return d;
+    }
+
+    const demo = [];
+    const demoStatus = {};
+    const demoNotebook = {};
+    const demoDaily = [];
+    let idCounter = 1;
+
+    units.forEach((unit, uIdx)=>{
+      const count = unitWeights[uIdx];
+      const titlePool = (titlesByUnit[unit]||[]).concat(Math.random()<0.3?extraTitles:[]);
+      for(let i=0;i<count;i++){
+        const surname = surnames[Math.floor(Math.random()*surnames.length)];
+        const given = givenChars[Math.floor(Math.random()*givenChars.length)];
+        const name = surname + 'O' + given.slice(0,1);
+        const staffId = 'E' + String(10000 + idCounter).slice(1);
+        const email = 'demo' + idCounter + '@chimei.org.tw';
+        const title = titlePool.length ? titlePool[Math.floor(Math.random()*titlePool.length)] : '行政人員';
+
+        // 模擬 1~5 成的人重複填答 1~2 次
+        const submitTimes = Math.random() < 0.18 ? (1 + Math.floor(Math.random()*2) + 1) : 1;
+        for(let s=0; s<submitTimes; s++){
+          const before = Math.floor(Math.random()*6)+4;
+          let drop = Math.floor(Math.random()*5)-1;
+          let after = Math.max(0, Math.min(10, before - drop));
+          const stressors = pickSome(stressorOptions, 1, 2).map(v=> v==='其他' ? stressorOtherSamples[Math.floor(Math.random()*stressorOtherSamples.length)] : v);
+          demo.push({
+            timestamp: randomTimestamp().toISOString(),
+            name: name, unit: unit, title: title, staffId: staffId, email: email,
+            moodBefore: pickWeighted(moods, moodWeights),
+            intensityBefore: before,
+            bodySignals: pickSome(bodyOptions, 0, 3).join('、'),
+            stressors: stressors.join('、'),
+            reframe: reframeSamples[Math.floor(Math.random()*reframeSamples.length)],
+            intensityAfter: after,
+            delta: before - after,
+            feedback: feedbackSamples[Math.floor(Math.random()*feedbackSamples.length)]
+          });
+          demo[demo.length-1].moodChange = demoChange(demo[demo.length-1]);
+        }
+        const dayCount = Math.random()<0.55 ? Math.floor(Math.random()*9) : Math.floor(Math.random()*20)+9;
+        const usedDays = new Set();
+        while(usedDays.size < Math.min(dayCount,30)){ usedDays.add(1+Math.floor(Math.random()*30)); }
+        usedDays.forEach(dayNum=>{ demoDaily.push({ staffId: staffId, date: '第'+dayNum+'天' }); });
+        idCounter++;
+      }
+    });
+
+    allSubmissions = demo;
+    dailyRecords = demoDaily;
+    notebookMap = {};
+    // 示範：隨機挑一些已達成資格的人標成已領取，模擬現場已發放的狀況
+    const uniqueStaffIds = [...new Set(demo.map(d=>d.staffId))];
+    uniqueStaffIds.forEach(sid=>{
+      const n = demoDaily.filter(r=>r.staffId===sid).length;
+      if(n>=5 && Math.random()<0.4){ demoStatus[sid] = { staffId:sid, status:'已領取', updatedAt:new Date().toISOString() }; }
+      if(n>=10 && Math.random()<0.3){ demoNotebook[sid] = { staffId:sid, status:'已領取', updatedAt:new Date().toISOString() }; }
+    });
+    statusMap = demoStatus;
+    notebookMap = demoNotebook;
+
+    const statusEl = document.getElementById('loadStatus');
+    statusEl.classList.remove('err');
+    statusEl.textContent = '目前顯示「示範資料」共 ' + demo.length + ' 筆（' + Object.keys(demoStatus).length + ' 人・示範每日打卡 ' + demoDaily.length + ' 筆），僅供預覽版面；按「重新整理資料」即可切換回正式資料。';
+    applyFilters();
+  }
+
+  // ---------------- 真實資料載入（google.script.run，與本頁同一個 Apps Script 專案） ----------------
+  function loadData(){
+    const statusEl = document.getElementById('loadStatus');
+    statusEl.classList.remove('err');
+    statusEl.textContent = '載入中…';
+
+    google.script.run
+      .withSuccessHandler(function(data){
+        usingDemo = false;
+        const subs = (data && Array.isArray(data.submissions)) ? data.submissions : [];
+        const gs = (data && Array.isArray(data.giftStatus)) ? data.giftStatus : [];
+        allSubmissions = subs;
+        statusMap = {};
+        gs.forEach(g=>{ statusMap[g.staffId] = g; });
+        dailyRecords = (data && Array.isArray(data.dailyCheckins)) ? data.dailyCheckins : [];
+        notebookMap = {};
+        ((data && Array.isArray(data.notebookStatus)) ? data.notebookStatus : []).forEach(g=>{ notebookMap[g.staffId] = g; });
+        statusEl.textContent = '已載入，共 ' + subs.length + ' 筆（' + new Date().toLocaleTimeString('zh-TW') + '）';
+        applyFilters();
+      })
+      .withFailureHandler(function(err){
+        statusEl.textContent = '載入失敗：' + (err && err.message ? err.message : err);
+        statusEl.classList.add('err');
+      })
+      .getData();
+  }
+
+  function esc(s){
+    return (s==null?'':String(s)).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  const MOOD_ICON = {'開心':'happy','快樂':'joy','平靜':'calm','疲累':'tired','焦慮':'anxious','煩躁':'irritated','低落':'sad','委屈':'wronged'};
+  const QUAD_MOODS = {'正向・高喚起':['快樂'],'正向・低喚起':['開心','平靜'],'負向・高喚起':['焦慮','煩躁','委屈'],'負向・低喚起':['疲累','低落']};
+  function bunSvg(id){ return '<svg class="bun" aria-hidden="true"><use href="#bun-'+id+'"/></svg>'; }
+  function moodIcon(m){ const id = MOOD_ICON[(m||'').trim()]; return id ? bunSvg(id) : ''; }
+  function quadIcons(q){ return (QUAD_MOODS[q]||[]).map(moodIcon).join(''); }
+
+  function valenceOf(m){ const meta = MOOD_META[(m||'').trim()]; if(!meta) return ''; return meta.q.indexOf('正向')===0 ? 'pos' : 'neg'; }
+
+  function summarize(list){
+    if(!list.length) return null;
+    const b = avgOf(list.map(d=>Number(d.intensityBefore)||0));
+    const a = avgOf(list.map(d=>Number(d.intensityAfter)||0));
+    const dl = list.map(d=>Number(d.delta)||0);
+    const cnt = k => list.filter(d=>(d.moodChange||'').trim()===k).length;
+    const ch = {better:cnt('更好'), same:cnt('差不多'), worse:cnt('沒那麼好')};
+    ch.total = ch.better + ch.same + ch.worse;
+    return {n:list.length, people:Object.keys(dedupePersons(list)).length, b:b, a:a, d:b-a, ch:ch,
+      down:dl.filter(x=>x>0).length, same:dl.filter(x=>x===0).length, up:dl.filter(x=>x<0).length};
+  }
+  function sumBar(label, segs, denom){
+    const items = segs.filter(g=>g[1]).map(g=>'<span class="seg-'+g[2]+'" style="width:'+(g[1]/denom*100)+'%">'+g[0]+' '+Math.round(g[1]/denom*100)+'%</span>').join('');
+    return '<div class="sum-barlabel">'+label+'</div><div class="sum-bar">'+items+'</div>';
+  }
+  function summaryCard(kind, s){
+    const isNeg = kind === 'neg';
+    const moods = isNeg ? ['疲累','焦慮','煩躁','低落','委屈'] : ['開心','快樂','平靜'];
+    const head = '<h3><span class="sum-icons">'+moods.map(moodIcon).join('')+'</span>'+(isNeg?'負向感受':'正向感受')+'<span class="sum-moods">'+moods.join('・')+'</span></h3>';
+    if(!s) return '<div class="sum-card '+kind+'">'+head+'<div class="empty">目前沒有這類感受的資料。</div></div>';
+    const pct = x => Math.round(x/s.n*100), c = s.ch, pc = x => Math.round(x/c.total*100);
+    const bf = s.b.toFixed(1), af = s.a.toFixed(1), ad = Math.abs(s.d).toFixed(1);
+    let big, meta, bars, quote, note;
+    if(isNeg){
+      const dTxt = s.d>0 ? '平均下降 '+ad+' 分' : (s.d<0 ? '平均上升 '+ad+' 分' : '平均持平');
+      big = bf+' → '+af+' <small>'+dTxt+'</small>';
+      meta = s.n+' 筆・'+s.people+' 人（強度：前 → 後，滿分 10）';
+      bars = sumBar('強度變化', [['下降',s.down,'good'],['持平',s.same,'mid'],['上升',s.up,'bad']], s.n);
+      quote = '負向感受共 '+s.n+' 筆（'+s.people+' 人），透過呼吸練習，情緒強度平均由 '+bf+' 分'
+        + (s.d>0 ? '下降至 '+af+' 分（下降 '+ad+' 分）' : s.d<0 ? '上升至 '+af+' 分（上升 '+ad+' 分）' : '維持在 '+af+' 分')
+        + '，其中 '+pct(s.down)+'% 的填答強度下降'
+        + (c.total ? '，'+pc(c.better)+'% 自評心情比剛才更好' : '') + '。';
+      note = '負向感受以「強度下降」為主要指標，「自評心情」為輔助佐證。';
+    } else {
+      big = c.total ? (pc(c.better+c.same)+'% <small>自評心情維持或更好</small>') : (bf+' → '+af+' <small>強度變化</small>');
+      meta = s.n+' 筆・'+s.people+' 人（感受強度：'+bf+' → '+af+'，僅供參考）';
+      bars = sumBar('強度變化', [['提升',s.up,'good'],['持平',s.same,'mid'],['降低',s.down,'bad']], s.n);
+      quote = '正向感受共 '+s.n+' 筆（'+s.people+' 人），做完呼吸後'
+        + (c.total ? ' '+pc(c.better+c.same)+'% 自評心情維持或更好（其中更好 '+pc(c.better)+'%）；' : '，')
+        + '感受強度平均由 '+bf+' 分變為 '+af+' 分。';
+      note = '正向感受不以「下降」為目標：強度降低可能只是興奮回到平靜，因此以「自評心情」判斷是否變差。';
+    }
+    if(c.total) bars += sumBar('自評心情（跟剛才比）', [['更好',c.better,'good'],['差不多',c.same,'mid'],['沒那麼好',c.worse,'bad']], c.total);
+    return '<div class="sum-card '+kind+'">'+head
+      + '<div class="sum-big">'+big+'</div>'
+      + '<div class="sum-meta">'+meta+'</div>'
+      + bars
+      + '<div class="sum-quote">'+quote+'</div>'
+      + '<button class="sum-copy" onclick="copyQuote(this)">複製這段文字</button>'
+      + '<div class="sum-note">'+note+'</div></div>';
+  }
+  function demoChange(d){
+    const r = Math.random(), dl = Number(d.delta)||0;
+    if(valenceOf(d.moodBefore)==='pos') return r<0.5?'更好':(r<0.85?'差不多':'沒那麼好');
+    if(dl>0) return r<0.8?'更好':'差不多';
+    if(dl===0) return r<0.7?'差不多':'更好';
+    return r<0.6?'沒那麼好':'差不多';
+  }
+  function renderSummary(){
+    const el = document.getElementById('summaryWrap');
+    if(!baseFiltered.length){ el.innerHTML = '<div class="empty">目前沒有資料。</div>'; return; }
+    const neg = summarize(baseFiltered.filter(d=>valenceOf(d.moodBefore)==='neg'));
+    const pos = summarize(baseFiltered.filter(d=>valenceOf(d.moodBefore)==='pos'));
+    el.innerHTML = '<div class="sum-grid">'+summaryCard('neg',neg)+summaryCard('pos',pos)+'</div>';
+  }
+  function copyQuote(btn){
+    const txt = btn.previousElementSibling.textContent;
+    const done = ()=>{ btn.textContent = '已複製'; setTimeout(()=>{ btn.textContent = '複製這段文字'; }, 1500); };
+    try{ navigator.clipboard.writeText(txt).then(done, done); }catch(e){ done(); }
+  }
+  function dailyCountOf(staffId){
+    const days = new Set();
+    dailyRecords.filter(r=>r.staffId===staffId).forEach(r=>days.add(r.date));
+    return days.size;
+  }
+  function penThreshold(){
+    const v = parseInt((document.getElementById('penThreshold')||{}).value,10);
+    return isNaN(v) ? 3 : v;
+  }
+  function notebookThreshold(){
+    const v = parseInt((document.getElementById('notebookThreshold')||{}).value,10);
+    return isNaN(v) ? 5 : v;
+  }
+  function getStatus(staffId){
+    if(statusMap[staffId] && statusMap[staffId].status) return statusMap[staffId].status;
+    return dailyCountOf(staffId) >= penThreshold() ? '可兌換' : '未達成';
+  }
+  function getNotebookStatus(staffId){
+    if(notebookMap[staffId] && notebookMap[staffId].status) return notebookMap[staffId].status;
+    return dailyCountOf(staffId) >= notebookThreshold() ? '可兌換' : '未達成';
+  }
+  function updateNotebookStatus(staffId, newStatus, name, unit){
+    notebookMap[staffId] = { staffId, name, unit, status:newStatus, updatedAt: new Date().toISOString() };
+    renderUnits(dedupePersons(filtered));
+    renderStock();
+    if(usingDemo) return;
+    google.script.run
+      .withFailureHandler(function(err){ console.error('更新筆記本狀態失敗', err); })
+      .setNotebookStatus(staffId, newStatus, name, unit);
+  }
+
+  // ---------------- 篩選 ----------------
+  function dateRangeBounds(key){
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if(key === 'thisWeek'){
+      const dow = (now.getDay() + 6) % 7; // 週一=0
+      const monday = new Date(startOfToday); monday.setDate(monday.getDate() - dow);
+      return { from: monday, to: null };
+    }
+    if(key === 'last7'){
+      const from = new Date(startOfToday); from.setDate(from.getDate() - 6);
+      return { from, to: null };
+    }
+    if(key === 'thisMonth'){
+      return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: null };
+    }
+    if(key === 'last30'){
+      const from = new Date(startOfToday); from.setDate(from.getDate() - 29);
+      return { from, to: null };
+    }
+    return null;
+  }
+
+  function applyFilters(){
+    const kw = document.getElementById('searchBox').value.trim().toLowerCase();
+    const statusFilterVal = document.getElementById('statusFilter').value;
+    const dateVal = document.getElementById('dateRangeFilter').value;
+    const bounds = dateVal !== 'all' ? dateRangeBounds(dateVal) : null;
+
+    filtered = allSubmissions.filter(d=>{
+      if(kw){
+        const hay = [d.name,d.unit,d.title,d.staffId,d.email].join(' ').toLowerCase();
+        if(hay.indexOf(kw) === -1) return false;
+      }
+      if(statusFilterVal !== 'all'){
+        if(getStatus(d.staffId) !== statusFilterVal) return false;
+      }
+      if(bounds){
+        const t = new Date(d.timestamp);
+        if(isNaN(t.getTime())) return false;
+        if(bounds.from && t < bounds.from) return false;
+        if(bounds.to && t > bounds.to) return false;
+      }
+      return true;
+    });
+
+    baseFiltered = filtered.slice();
+    const valVal = document.getElementById('valenceFilter').value;
+    if(valVal !== 'all'){ filtered = filtered.filter(d=> valenceOf(d.moodBefore) === valVal); }
+    const moodVal = document.getElementById('moodFilter').value;
+    if(moodVal !== 'all'){ filtered = filtered.filter(d=> (d.moodBefore||'').trim() === moodVal); }
+    const hintEl = document.getElementById('filterHint');
+    if(kw || statusFilterVal !== 'all' || valVal !== 'all' || moodVal !== 'all' || dateVal !== 'all'){
+      hintEl.textContent = '篩選中：符合 ' + filtered.length + ' / ' + allSubmissions.length + ' 筆';
+    } else {
+      hintEl.textContent = '';
+    }
+    render();
+  }
+
+  function dedupePersons(list){
+    const map = {};
+    list.forEach(d=>{
+      const key = d.staffId || (d.name+'_'+d.unit);
+      if(!map[key]){
+        map[key] = {count:0, deltas:[], latest:d};
+      }
+      if(new Date(d.timestamp) >= new Date(map[key].latest.timestamp)){
+        map[key].latest = d;
+      }
+      map[key].count++;
+      map[key].deltas.push(Number(d.delta)||0);
+    });
+    return map;
+  }
+
+  // ---------------- 主要渲染 ----------------
+  function renderStock(){
+    const penTotalEl = document.getElementById('penStockTotal');
+    const nbTotalEl = document.getElementById('notebookStockTotal');
+    try{
+      localStorage.setItem('sel_pen_stock_total', penTotalEl.value);
+      localStorage.setItem('sel_notebook_stock_total', nbTotalEl.value);
+    }catch(e){}
+
+    const penTotal = Math.max(0, parseInt(penTotalEl.value, 10) || 0);
+    const nbTotal = Math.max(0, parseInt(nbTotalEl.value, 10) || 0);
+    const penClaimed = Object.values(statusMap).filter(g=>g && g.status === '已領取').length;
+    const nbClaimed = Object.values(notebookMap).filter(g=>g && g.status === '已領取').length;
+
+    const uniqueStaffIds = [...new Set(allSubmissions.map(d=>d.staffId).filter(Boolean))];
+    const penEligible = uniqueStaffIds.filter(sid=>dailyCountOf(sid) >= penThreshold()).length;
+    const nbEligible  = uniqueStaffIds.filter(sid=>dailyCountOf(sid) >= notebookThreshold()).length;
+
+    function paint(claimed, total, eligible, fillId, numsId, eligibleId){
+      const remaining = total - claimed;
+      const pct = total ? Math.min(100, Math.round(claimed/total*100)) : (claimed>0 ? 100 : 0);
+      const fill = document.getElementById(fillId);
+      fill.style.width = pct + '%';
+      fill.className = 'stock-fill' + (remaining<=0 ? ' out' : (total && remaining/total<=0.1 ? ' low' : ''));
+      const warn = remaining<=0 ? '<span class="warn">已發完</span>' : (total && remaining/total<=0.1 ? '<span class="warn">庫存偏低</span>' : '');
+      document.getElementById(numsId).innerHTML = '已領取 ' + claimed + '／' + total + '・剩餘 ' + Math.max(0,remaining) + (warn ? '　' + warn : '');
+      document.getElementById(eligibleId).textContent = '已達成資格 ' + eligible + ' 人（還沒領的有 ' + Math.max(0, eligible-claimed) + ' 人）';
+    }
+    paint(penClaimed, penTotal, penEligible, 'penStockFill', 'penStockNums', 'penStockEligible');
+    paint(nbClaimed, nbTotal, nbEligible, 'notebookStockFill', 'notebookStockNums', 'notebookStockEligible');
+  }
+
+  function renderBrief(){
+    const titleMap = {all:'整體摘要', thisWeek:'本週摘要', last7:'最近 7 天摘要', thisMonth:'本月摘要', last30:'最近 30 天摘要'};
+    const dateVal = document.getElementById('dateRangeFilter').value;
+    document.getElementById('briefTitle').textContent = titleMap[dateVal] || '摘要';
+
+    const list = baseFiltered;
+    if(list.length === 0){
+      ['briefMood','briefBreathing','briefEvents','briefSupport'].forEach(id=>{
+        document.getElementById(id).innerHTML = '這段期間沒有資料。';
+      });
+      return;
+    }
+
+    // 1. 情緒分布
+    const moodCount = {};
+    list.forEach(d=>{ const m=(d.moodBefore||'').trim(); if(m) moodCount[m]=(moodCount[m]||0)+1; });
+    const moodSorted = Object.entries(moodCount).sort((a,b)=>b[1]-a[1]);
+    const posN = list.filter(d=>valenceOf(d.moodBefore)==='pos').length;
+    const negN = list.filter(d=>valenceOf(d.moodBefore)==='neg').length;
+    if(moodSorted.length){
+      const [topMood, topN] = moodSorted[0];
+      const pct = Math.round(topN/list.length*100);
+      const top3 = moodSorted.slice(0,3).map(([m,c])=>moodIcon(m)+m+'（'+c+'）').join('、');
+      document.getElementById('briefMood').innerHTML =
+        '最常出現的感受是 <span class="hl">「'+esc(topMood)+'」</span>（'+topN+' 筆，佔 '+pct+'%）。'
+        + '前三名：'+top3+'。<br>整體偏正向 '+posN+' 筆・偏負向 '+negN+' 筆。';
+    } else {
+      document.getElementById('briefMood').innerHTML = '這段期間沒有感受資料。';
+    }
+
+    // 2. 呼吸練習成效
+    const negList = list.filter(d=>valenceOf(d.moodBefore)==='neg');
+    const posList = list.filter(d=>valenceOf(d.moodBefore)==='pos');
+    const sNeg = summarize(negList), sPos = summarize(posList);
+    let breathTxt = '';
+    if(sNeg){
+      const pctDown = Math.round(sNeg.down/sNeg.n*100);
+      breathTxt += '負向感受：強度平均 <span class="hl">'+sNeg.b.toFixed(1)+' → '+sNeg.a.toFixed(1)+'</span>，'+pctDown+'% 的人強度下降。';
+    } else { breathTxt += '這段期間沒有負向感受的資料。'; }
+    breathTxt += '<br>';
+    if(sPos && sPos.ch.total){
+      const pctBetter = Math.round((sPos.ch.better+sPos.ch.same)/sPos.ch.total*100);
+      breathTxt += '正向感受：'+pctBetter+'% 自評心情維持或更好。';
+    } else { breathTxt += '這段期間沒有正向感受的自評資料。'; }
+    breathTxt += '<span class="quote">負向看「強度下降」、正向看「自評心情」，兩種方向不同，不能直接相加比較；資料來自自願填答、也沒有對照組，只能說「有相關」，不能說「證明有效」。</span>';
+    document.getElementById('briefBreathing').innerHTML = breathTxt;
+
+    // 3. 影響情緒的事件（負向/正向分開列前三）
+    const evNegCount = countMulti(negList, 'stressors');
+    const evPosCount = countMulti(posList, 'stressors');
+    const topN = (map, n) => Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,n);
+    const fmtList = entries => entries.length
+      ? entries.map(([ev,c],i)=> (i===0?'<span class="hl">':'')+esc(ev)+'（'+c+'）'+(i===0?'</span>':'')).join('、')
+      : '沒有資料';
+    document.getElementById('briefEvents').innerHTML =
+      '負向事件最常見：'+fmtList(topN(evNegCount,3))+'<br>正向事件最常見：'+fmtList(topN(evPosCount,3));
+
+    // 4. 需要的支持
+    const supportEntries = [];
+    list.forEach(d=>{ if((d.feedback||'').trim()) supportEntries.push(d.feedback.trim()); });
+    if(supportEntries.length){
+      const sample = supportEntries.slice(0,3).map(t=>'<span class="quote">「'+esc(t)+'」</span>').join('');
+      document.getElementById('briefSupport').innerHTML = '共 <span class="hl">'+supportEntries.length+'</span> 筆填寫了希望獲得的支持：' + sample
+        + (supportEntries.length>3 ? '<br>更多內容請到下方「開放式留言整理」篩選查看。' : '');
+    } else {
+      document.getElementById('briefSupport').innerHTML = '這段期間沒有人填寫這一欄。';
+    }
+  }
+
+  function render(){
+    renderBrief();
+    renderSummary();
+    renderStock();
+    const n = filtered.length;
+    document.getElementById('statTotal').textContent = n;
+
+    const personMap = dedupePersons(filtered);
+    const personKeys = Object.keys(personMap);
+    document.getElementById('statPeople').textContent = personKeys.length;
+
+    if(n === 0){
+      ['statAvgBefore','statAvgAfter','statAvgDelta'].forEach(id=>document.getElementById(id).textContent='–');
+      ['unitsWrap','quadWrap','moodWrap','bodyWrap','stressorNegWrap','stressorPosWrap','deltaWrap','moodDeltaWrap','timeslotWrap','roleWrap','monthWrap','feedbackWrap','trendWrap'].forEach(id=>{
+        document.getElementById(id).innerHTML = '<div class="empty">目前沒有符合條件的資料。</div>';
+      });
+      return;
+    }
+
+    const avg = arr => arr.length ? (arr.reduce((a,b)=>a+b,0) / arr.length) : 0;
+    const negOnly = filtered.filter(d=>valenceOf(d.moodBefore)==='neg');
+    if(negOnly.length){
+      document.getElementById('statAvgBefore').textContent = avg(negOnly.map(d=>Number(d.intensityBefore)||0)).toFixed(1);
+      document.getElementById('statAvgAfter').textContent  = avg(negOnly.map(d=>Number(d.intensityAfter)||0)).toFixed(1);
+      const avgDelta = avg(negOnly.map(d=>Number(d.delta)||0));
+      document.getElementById('statAvgDelta').textContent = (avgDelta>0?'↓':avgDelta<0?'↑':'') + Math.abs(avgDelta).toFixed(1);
+    } else {
+      ['statAvgBefore','statAvgAfter','statAvgDelta'].forEach(id=>document.getElementById(id).textContent='–');
+    }
+
+    renderUnits(personMap);
+    renderQuadrant();
+    renderCountPanel('moodWrap', countSingle(filtered, 'moodBefore'), n);
+    renderCountPanel('bodyWrap', countMulti(filtered, 'bodySignals'), n, true);
+    renderCountPanel('stressorNegWrap', countMulti(negOnly, 'stressors'), negOnly.length, true);
+    renderCountPanel('stressorPosWrap', countMulti(filtered.filter(d=>valenceOf(d.moodBefore)==='pos'), 'stressors'), filtered.filter(d=>valenceOf(d.moodBefore)==='pos').length, true);
+    renderDeltaHist();
+    renderMoodDelta();
+    renderTimeslot();
+    renderRole();
+    renderMonthTrend();
+    renderTrend();
+    renderFeedback();
+  }
+
+  function countSingle(arr, key){
+    const map = {};
+    arr.forEach(d=>{ const v=(d[key]||'').trim(); if(v) map[v]=(map[v]||0)+1; });
+    return map;
+  }
+  function countMulti(arr, key){
+    const map = {};
+    arr.forEach(d=>{
+      const raw = (d[key]||'').trim();
+      if(!raw) return;
+      raw.split('、').forEach(v=>{
+        v = v.trim(); if(!v) return;
+        if(v.indexOf('其他：')===0 || v.indexOf('其他:')===0){ v='其他'; }
+        map[v]=(map[v]||0)+1;
+      });
+    });
+    return map;
+  }
+
+  function renderCountPanel(elId, map, totalN, isMulti){
+    const el = document.getElementById(elId);
+    const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+    if(entries.length===0){ el.innerHTML='<div class="empty">目前沒有資料。</div>'; return; }
+    const max = Math.max(...entries.map(e=>e[1]));
+    el.innerHTML = entries.map(([label,count])=>{
+      const pct = totalN ? Math.round(count/totalN*100) : 0;
+      const width = Math.round(count/max*100);
+      return '<div class="bar-row"><div class="bar-top"><span>'+moodIcon(label)+esc(label)+'</span><span class="cnt">'+count+' 次'+(isMulti?'':'・'+pct+'%')+'</span></div>'
+        + '<div class="bar-track"><div class="bar-fill sage" style="width:'+width+'%"></div></div></div>';
+    }).join('');
+  }
+
+  function renderDeltaHist(){
+    const buckets = [
+      {label:'下降 3 分以上（明顯變平靜）', test:d=>d>=3},
+      {label:'下降 1～2 分', test:d=>d>=1 && d<3},
+      {label:'持平（0 分）', test:d=>d===0},
+      {label:'上升 1 分以上', test:d=>d<0}
+    ];
+    const counts = buckets.map(b=>filtered.filter(d=>b.test(Number(d.delta)||0)).length);
+    const max = Math.max(...counts,1);
+    document.getElementById('deltaWrap').innerHTML = buckets.map((b,i)=>{
+      const width = Math.round(counts[i]/max*100);
+      return '<div class="bar-row"><div class="bar-top"><span>'+b.label+'</span><span class="cnt">'+counts[i]+' 人</span></div>'
+        + '<div class="bar-track"><div class="bar-fill" style="width:'+width+'%"></div></div></div>';
+    }).join('');
+  }
+
+  // ---------------- 部門對照表（人事號 → 單位，僅存在這台瀏覽器，不會送出） ----------------
+  let unitMap = {};
+  function loadUnitMap(){
+    try{ unitMap = JSON.parse(localStorage.getItem('sel_unit_map') || '{}'); }catch(e){ unitMap = {}; }
+    document.getElementById('unitMapCount').textContent = Object.keys(unitMap).length;
+  }
+  function applyUnitMap(){
+    const raw = document.getElementById('unitMapInput').value;
+    const map = {};
+    raw.split('\n').forEach(line=>{
+      line = line.trim();
+      if(!line) return;
+      const parts = line.split(/[,\t，]/).map(s=>s.trim());
+      if(parts.length >= 2 && parts[0]){ map[parts[0].toUpperCase()] = parts[1]; }
+    });
+    unitMap = map;
+    try{ localStorage.setItem('sel_unit_map', JSON.stringify(unitMap)); }catch(e){}
+    document.getElementById('unitMapCount').textContent = Object.keys(unitMap).length;
+    document.getElementById('unitMapStatus').textContent = '已套用，共 ' + Object.keys(unitMap).length + ' 筆對照。';
+    applyFilters();
+  }
+  function resolveUnit(staffId, fallbackUnit){
+    const u = unitMap[String(staffId||'').toUpperCase()];
+    if(u) return u;
+    const fb = (fallbackUnit||'').trim();
+    return fb || '未提供部門對照';
+  }
+
+  function renderUnits(personMap){
+    const groups = {};
+    Object.keys(personMap).forEach(key=>{
+      const p = personMap[key];
+      const u = resolveUnit(p.latest.staffId, p.latest.unit);
+      (groups[u] = groups[u] || []).push({key, p});
+    });
+    // 只用「負向感受」的人來算壓力強度（正向感受的強度上升是好事，混在一起平均沒有意義）
+    function negEntries(list){ return list.filter(x=>valenceOf(x.p.latest.moodBefore)==='neg'); }
+    // 依「平均強度（前）」由高到低排序，壓力最大的部門排最前面；沒有部門對照、或沒有負向感受資料的排最後
+    const unitNames = Object.keys(groups).sort((a,b)=>{
+      if(a==='未提供部門對照') return 1;
+      if(b==='未提供部門對照') return -1;
+      const negA = negEntries(groups[a]), negB = negEntries(groups[b]);
+      if(!negA.length) return 1;
+      if(!negB.length) return -1;
+      const avgA = avgOf(negA.map(x=>Number(x.p.latest.intensityBefore)||0));
+      const avgB = avgOf(negB.map(x=>Number(x.p.latest.intensityBefore)||0));
+      return avgB - avgA;
+    });
+    const el = document.getElementById('unitsWrap');
+    if(unitNames.length === 0){ el.innerHTML = '<div class="empty">目前沒有符合條件的資料。</div>'; return; }
+
+    el.innerHTML = unitNames.map((u,idx)=>{
+      const list = groups[u];
+      const negList = negEntries(list);
+      const avgBefore = negList.length ? avgOf(negList.map(x=>Number(x.p.latest.intensityBefore)||0)) : null;
+      const avgDelta  = negList.length ? avgOf(negList.map(x=>Number(x.p.latest.delta)||0)) : null;
+      const rows = list.map(x=>{
+        const d = x.p.latest;
+        const delta = Number(d.delta)||0;
+        const deltaCls = delta>0?'down':(delta<0?'up':'');
+        const deltaTxt = delta>0?('↓'+delta):(delta<0?('↑'+Math.abs(delta)):'0');
+        const status = getStatus(d.staffId);
+        const nbStatus = getNotebookStatus(d.staffId);
+        const times = x.p.count > 1 ? '（填答 '+x.p.count+' 次）' : '';
+        return '<div class="person-row">'
+          + '<span class="p-name">'+esc(d.name)+'</span>'
+          + '<span class="p-tag">'+esc(d.title)+'</span>'
+          + '<span class="p-tag">'+esc(d.staffId)+'</span>'
+          + '<span class="p-tag">'+esc(d.email)+'</span>'
+          + '<span class="p-tag">'+moodIcon(d.moodBefore)+esc(d.moodBefore)+times+'</span>'
+          + '<span class="p-delta '+deltaCls+'">'+d.intensityBefore+'→'+d.intensityAfter+'（'+deltaTxt+'）</span>'
+          + ((d.stressors||'').trim() ? '<span class="p-reason">因為：'+esc(d.stressors)+'</span>' : '')
+          + '<span class="p-status">'
+          +   '<span class="p-status-label">筆 '+dailyCountOf(d.staffId)+'/'+penThreshold()+' 天</span>'
+          +   '<select class="status-select st-'+status+'" onchange="updateStatus(\''+esc(d.staffId)+'\',this.value,\''+esc(d.name)+'\',\''+esc(d.unit)+'\')">'
+          +     ['未達成','可兌換','已領取'].map(s=>'<option value="'+s+'"'+(s===status?' selected':'')+'>'+s+'</option>').join('')
+          +   '</select>'
+          + '</span>'
+          + '<span class="p-status">'
+          +   '<span class="p-status-label">筆記本 '+dailyCountOf(d.staffId)+'/'+notebookThreshold()+' 天</span>'
+          +   '<select class="status-select st-'+nbStatus+'" onchange="updateNotebookStatus(\''+esc(d.staffId)+'\',this.value,\''+esc(d.name)+'\',\''+esc(d.unit)+'\')">'
+          +     ['未達成','可兌換','已領取'].map(s=>'<option value="'+s+'"'+(s===nbStatus?' selected':'')+'>'+s+'</option>').join('')
+          +   '</select>'
+          + '</span>'
+          + '</div>';
+      }).join('');
+      const topBadge = (idx===0 && u!=='未提供部門對照' && avgBefore!==null && unitNames.length>1) ? '<span class="rank-badge">壓力最高</span>' : '';
+      const metaTxt = avgBefore===null
+        ? (list.length+' 人・暫無負向感受資料')
+        : (list.length+' 人（負向 '+negList.length+' 人）・平均強度(前) '+avgBefore.toFixed(1)+'・平均'+(avgDelta>0?'下降':avgDelta<0?'上升':'持平')+' '+Math.abs(avgDelta).toFixed(1)+' 分');
+      return '<div class="unit-card">'
+        + '<div class="unit-head" onclick="toggleUnit('+idx+')">'
+        +   '<span class="name">'+esc(u)+topBadge+'</span>'
+        +   '<span class="meta">'+metaTxt+'</span>'
+        + '</div>'
+        + '<div class="unit-body" id="unitBody-'+idx+'">'+rows+'</div>'
+        + '</div>';
+    }).join('');
+    if(unitNames.length){ document.getElementById('unitBody-0').classList.add('open'); }
+  }
+
+  function avgOf(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+
+  function toggleUnit(idx){ document.getElementById('unitBody-'+idx).classList.toggle('open'); }
+
+  function updateStatus(staffId, newStatus, name, unit){
+    statusMap[staffId] = { staffId, name, unit, status:newStatus, updatedAt: new Date().toISOString() };
+    renderUnits(dedupePersons(filtered)); // 重繪，讓下拉選單樣式與數值同步
+    renderStock();
+
+    if(usingDemo) return; // 示範模式不送出網路請求
+
+    google.script.run
+      .withFailureHandler(function(err){ console.error('更新筆狀態失敗', err); })
+      .setGiftStatus(staffId, newStatus, name, unit);
+  }
+
+  // ---------------- 情緒二維模型 ----------------
+  function renderQuadrant(){
+    const counts = {}; QUADRANTS.forEach(q=>counts[q]=0);
+    let matched = 0;
+    filtered.forEach(d=>{
+      const meta = MOOD_META[(d.moodBefore||'').trim()];
+      if(meta){ counts[meta.q] = (counts[meta.q]||0)+1; matched++; }
+    });
+    const el = document.getElementById('quadWrap');
+    if(matched === 0){ el.innerHTML = '<div class="empty">目前沒有資料。</div>'; return; }
+    el.innerHTML = QUADRANTS.map(q=>{
+      const c = counts[q]||0;
+      const pct = matched ? Math.round(c/matched*100) : 0;
+      return '<div class="quad-cell"><div class="qicons">'+quadIcons(q)+'</div><div class="qn">'+c+'</div><div class="ql">'+q+'（'+pct+'%）</div><div class="qs">'+QUADRANT_DESC[q]+'</div></div>';
+    }).join('') + '<div class="quad-axis" style="grid-column:1/-1;">橫軸：負向 ← → 正向　｜　縱軸：低能量 ← → 高能量</div>';
+  }
+
+  // ---------------- 依感受分類的呼吸前後差異 ----------------
+  function renderMoodDelta(){
+    const groups = {};
+    filtered.forEach(d=>{
+      const m = (d.moodBefore||'').trim(); if(!m) return;
+      (groups[m] = groups[m] || []).push(Number(d.delta)||0);
+    });
+    const entries = Object.entries(groups).map(([m,arr])=>[m, avgOf(arr), arr.length]).sort((a,b)=>b[1]-a[1]);
+    const el = document.getElementById('moodDeltaWrap');
+    if(entries.length===0){ el.innerHTML='<div class="empty">目前沒有資料。</div>'; return; }
+    const maxAbs = Math.max(...entries.map(e=>Math.abs(e[1])), 1);
+    el.innerHTML = entries.map(([m,avgD,cnt])=>{
+      const width = Math.round(Math.abs(avgD)/maxAbs*100);
+      const cls = avgD>0 ? 'sage' : (avgD<0 ? '' : 'gold');
+      const txt = avgD>0 ? ('平均下降 '+avgD.toFixed(1)+' 分') : (avgD<0 ? ('平均上升 '+Math.abs(avgD).toFixed(1)+' 分') : '平均持平');
+      return '<div class="bar-row"><div class="bar-top"><span>'+moodIcon(m)+esc(m)+'</span><span class="cnt">'+txt+'・'+cnt+' 筆</span></div>'
+        + '<div class="bar-track"><div class="bar-fill '+cls+'" style="width:'+width+'%"></div></div></div>';
+    }).join('');
+  }
+
+  // ---------------- 依時段 ----------------
+  function renderTimeslot(){
+    const slots = [
+      {label:'白天（06:00–14:00）', test:h=>h>=6 && h<14},
+      {label:'小夜（14:00–22:00）', test:h=>h>=14 && h<22},
+      {label:'大夜（22:00–06:00）', test:h=>h>=22 || h<6}
+    ];
+    const buckets = slots.map(()=>[]);
+    filtered.forEach(d=>{
+      if(!d.timestamp) return;
+      const h = new Date(d.timestamp).getHours();
+      slots.forEach((s,i)=>{ if(s.test(h)) buckets[i].push(Number(d.intensityBefore)||0); });
+    });
+    const el = document.getElementById('timeslotWrap');
+    const hasAny = buckets.some(b=>b.length);
+    if(!hasAny){ el.innerHTML='<div class="empty">目前沒有資料。</div>'; return; }
+    const maxAvg = Math.max(...buckets.map(b=>avgOf(b)), 1);
+    el.innerHTML = slots.map((s,i)=>{
+      const arr = buckets[i];
+      const a = avgOf(arr);
+      const width = Math.round(a/maxAvg*100);
+      return '<div class="bar-row"><div class="bar-top"><span>'+s.label+'</span><span class="cnt">平均強度 '+(arr.length?a.toFixed(1):'–')+'・'+arr.length+' 筆</span></div>'
+        + '<div class="bar-track"><div class="bar-fill" style="width:'+(arr.length?width:0)+'%"></div></div></div>';
+    }).join('');
+  }
+
+  // ---------------- 依職類 ----------------
+  function renderRole(){
+    const groups = {};
+    filtered.forEach(d=>{
+      const t = (d.title||'未填寫職稱').trim() || '未填寫職稱';
+      (groups[t] = groups[t] || []).push(Number(d.intensityBefore)||0);
+    });
+    const entries = Object.entries(groups).sort((a,b)=>b[1].length-a[1].length).slice(0,8);
+    const el = document.getElementById('roleWrap');
+    if(entries.length===0){ el.innerHTML='<div class="empty">目前沒有資料。</div>'; return; }
+    const maxCount = Math.max(...entries.map(e=>e[1].length));
+    el.innerHTML = entries.map(([t,arr])=>{
+      const width = Math.round(arr.length/maxCount*100);
+      return '<div class="bar-row"><div class="bar-top"><span>'+esc(t)+'</span><span class="cnt">'+arr.length+' 筆・平均強度 '+avgOf(arr).toFixed(1)+'</span></div>'
+        + '<div class="bar-track"><div class="bar-fill sage" style="width:'+width+'%"></div></div></div>';
+    }).join('');
+  }
+
+  // ---------------- 原因隨月份變化 ----------------
+  // ---------------- 情緒強度趨勢（折線圖） ----------------
+  function renderTrend(){
+    const el = document.getElementById('trendWrap');
+    const negList = filtered.filter(d=>valenceOf(d.moodBefore)==='neg' && d.timestamp);
+    const byDate = {};
+    negList.forEach(d=>{
+      const dt = new Date(d.timestamp);
+      if(isNaN(dt.getTime())) return;
+      const key = dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');
+      (byDate[key] = byDate[key] || {before:[], after:[]});
+      byDate[key].before.push(Number(d.intensityBefore)||0);
+      byDate[key].after.push(Number(d.intensityAfter)||0);
+    });
+    const dates = Object.keys(byDate).sort();
+    if(dates.length === 0){ el.innerHTML = '<div class="empty">這段期間沒有負向感受的資料，無法畫出趨勢。</div>'; return; }
+    if(dates.length === 1){
+      const g = byDate[dates[0]];
+      el.innerHTML = '<div class="empty">目前只有 1 天的資料（'+dates[0]+'），至少要有 2 個不同日期才能畫成趨勢線。當天平均：前 '
+        + avgOf(g.before).toFixed(1) + ' → 後 ' + avgOf(g.after).toFixed(1) + '（'+g.before.length+' 筆）</div>';
+      return;
+    }
+
+    const W = 760, H = 280, padL = 42, padR = 16, padT = 20, padB = 36;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const n = dates.length;
+    const xAt = i => padL + (n===1 ? plotW/2 : plotW * i/(n-1));
+    const yAt = v => padT + plotH * (1 - v/10);
+
+    const beforeAvg = dates.map(d=>avgOf(byDate[d].before));
+    const afterAvg  = dates.map(d=>avgOf(byDate[d].after));
+    const counts    = dates.map(d=>byDate[d].before.length);
+
+    const ptsStr = arr => arr.map((v,i)=> xAt(i)+','+yAt(v)).join(' ');
+
+    // Y 軸格線（0,2,4,6,8,10）
+    let grid = '';
+    for(let v=0; v<=10; v+=2){
+      const y = yAt(v);
+      grid += '<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="var(--line)" stroke-width="1"/>'
+        + '<text x="'+(padL-8)+'" y="'+(y+4)+'" font-size="11" fill="var(--ink-soft)" text-anchor="end">'+v+'</text>';
+    }
+
+    // X 軸標籤：資料點太多時，間隔抽樣避免擠在一起
+    const labelStep = Math.max(1, Math.ceil(n/8));
+    let xLabels = '';
+    dates.forEach((d,i)=>{
+      if(i % labelStep !== 0 && i !== n-1) return;
+      const short = d.slice(5).replace('-','/');
+      xLabels += '<text x="'+xAt(i)+'" y="'+(H-padB+18)+'" font-size="11" fill="var(--ink-soft)" text-anchor="middle">'+short+'</text>';
+    });
+
+    function dots(arr, color){
+      return arr.map((v,i)=>{
+        const title = dates[i].slice(5).replace('-','/')+'：'+v.toFixed(1)+'（'+counts[i]+' 筆）';
+        return '<circle cx="'+xAt(i)+'" cy="'+yAt(v)+'" r="4" fill="'+color+'" stroke="#fff" stroke-width="1.5"><title>'+title+'</title></circle>';
+      }).join('');
+    }
+
+    const svg = ''
+      + '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%; height:auto; font-family:inherit;">'
+      +   grid
+      +   '<polyline points="'+ptsStr(beforeAvg)+'" fill="none" stroke="var(--clay)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
+      +   '<polyline points="'+ptsStr(afterAvg)+'" fill="none" stroke="var(--sage)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'
+      +   dots(beforeAvg, 'var(--clay)')
+      +   dots(afterAvg, '#6E8352')
+      +   xLabels
+      + '</svg>';
+
+    const legend = '<div class="trend-legend">'
+      + '<span><i style="background:var(--clay)"></i>呼吸前</span>'
+      + '<span><i style="background:#6E8352"></i>呼吸後</span>'
+      + '<span class="trend-note">共 '+n+' 天有資料・滑鼠移到點上看當天數字</span>'
+      + '</div>';
+
+    el.innerHTML = legend + svg;
+  }
+
+  function renderMonthTrend(){
+    const groups = {};
+    filtered.forEach(d=>{
+      if(!d.timestamp) return;
+      const dt = new Date(d.timestamp);
+      const ym = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0');
+      (groups[ym] = groups[ym] || {total:0, stressors:{}});
+      groups[ym].total++;
+      const raw = (d.stressors||'').trim();
+      if(raw){
+        raw.split('、').forEach(v=>{
+          v=v.trim(); if(!v) return;
+          if(v.indexOf('其他：')===0 || v.indexOf('其他:')===0) v='其他';
+          groups[ym].stressors[v] = (groups[ym].stressors[v]||0)+1;
+        });
+      }
+    });
+    const months = Object.keys(groups).sort();
+    const el = document.getElementById('monthWrap');
+    if(months.length===0){ el.innerHTML='<div class="empty">目前沒有資料。</div>'; return; }
+    el.innerHTML = months.map(ym=>{
+      const g = groups[ym];
+      const top = Object.entries(g.stressors).sort((a,b)=>b[1]-a[1])[0];
+      const topTxt = top ? (esc(top[0])+'（'+top[1]+' 次）') : '無';
+      return '<div class="month-row"><span class="m-label">'+ym+'</span><span class="m-info">共 '+g.total+' 筆・最常見事件：'+topTxt+'</span></div>';
+    }).join('');
+  }
+
+  // ---------------- 開放式留言整理 ----------------
+  // 把三個開放式欄位攤平成統一格式：{timestamp, unit, title, staffId, moodBefore, type, text}
+  function collectFeedbackEntries(){
+    const out = [];
+    filtered.forEach(d=>{
+      if((d.feedback||'').trim()){
+        out.push({d, type:'希望支持', text:d.feedback.trim()});
+      }
+      if((d.reframe||'').trim()){
+        out.push({d, type:'想對自己說', text:d.reframe.trim()});
+      }
+      // stressors 欄位是用「、」join 的字串，「其他」的自訂文字格式為「其他：xxx」
+      (d.stressors||'').split(/、/).forEach(s=>{
+        const m = s.trim().match(/^其他[：:]\s*(.+)$/);
+        if(m && m[1]){ out.push({d, type:'其他說明', text:m[1].trim()}); }
+      });
+    });
+    return out.sort((a,b)=> new Date(b.d.timestamp) - new Date(a.d.timestamp));
+  }
+
+  function renderFeedback(){
+    const kw = (document.getElementById('feedbackSearch').value||'').trim().toLowerCase();
+    const typeVal = document.getElementById('feedbackTypeFilter').value;
+    let entries = collectFeedbackEntries();
+    if(typeVal !== 'all'){ entries = entries.filter(e=>e.type===typeVal); }
+    if(kw){ entries = entries.filter(e=>e.text.toLowerCase().indexOf(kw)>=0); }
+
+    document.getElementById('feedbackCount').textContent = '共 ' + entries.length + ' 則';
+    const el = document.getElementById('feedbackWrap');
+    if(entries.length===0){ el.innerHTML='<div class="empty">沒有符合條件的留言。</div>'; return; }
+    el.innerHTML = entries.map(e=>{
+      const d = e.d;
+      const dateTxt = d.timestamp ? new Date(d.timestamp).toLocaleDateString('zh-TW') : '';
+      return '<div class="quote-row"><span class="qtype">'+esc(e.type)+'</span>「'+esc(e.text)+'」'
+        + '<div class="qtag">'+esc(resolveUnit(d.staffId, d.unit))+'・'+esc(d.title)+'・'+moodIcon(d.moodBefore)+esc(d.moodBefore)+'・'+dateTxt+'</div></div>';
+    }).join('');
+  }
+
+  function exportFeedbackCsv(){
+    const kw = (document.getElementById('feedbackSearch').value||'').trim().toLowerCase();
+    const typeVal = document.getElementById('feedbackTypeFilter').value;
+    let entries = collectFeedbackEntries();
+    if(typeVal !== 'all'){ entries = entries.filter(e=>e.type===typeVal); }
+    if(kw){ entries = entries.filter(e=>e.text.toLowerCase().indexOf(kw)>=0); }
+    if(entries.length===0){ alert('目前沒有資料可以匯出。'); return; }
+
+    const csvEsc = s => '"' + String(s==null?'':s).replace(/"/g,'""') + '"';
+    const rows = [['日期','單位','職稱','感受','類型','留言內容']];
+    entries.forEach(e=>{
+      const d = e.d;
+      const dateTxt = d.timestamp ? new Date(d.timestamp).toLocaleDateString('zh-TW') : '';
+      rows.push([dateTxt, resolveUnit(d.staffId, d.unit), d.title, d.moodBefore, e.type, e.text]);
+    });
+    const csvContent = '\uFEFF' + rows.map(r=>r.map(csvEsc).join(',')).join('\r\n');
+    const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'SEL開放式留言_' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>
