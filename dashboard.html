@@ -491,6 +491,36 @@
 </div>
 
 <script>
+  // 在 GitHub Pages 等「非 Apps Script」網址開啟時，google.script.run 不存在。
+  // 這段會用 fetch 呼叫 Apps Script 的 doPost 來代替，原本的程式碼不用改。
+  // 請把下面的 GAS_URL 換成 Apps Script 部署後的「網頁應用程式」網址（結尾是 /exec）。
+  (function(){
+    var GAS_URL = '';
+    if(window.google && google.script && google.script.run) return;
+    function runner(onOk, onFail){
+      return new Proxy({}, { get: function(_, fn){
+        if(fn === 'withSuccessHandler') return function(h){ return runner(h, onFail); };
+        if(fn === 'withFailureHandler') return function(h){ return runner(onOk, h); };
+        return function(){
+          var args = Array.prototype.slice.call(arguments);
+          var fail = function(err){ if(onFail) onFail(err); else console.error(err); };
+          if(!GAS_URL){ fail(new Error('尚未設定 GAS_URL（Apps Script /exec 網址）')); return; }
+          fetch(GAS_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'text/plain;charset=utf-8'}, // 避免 CORS 預檢
+            body: JSON.stringify({fn: fn, args: args})
+          })
+            .then(function(r){ return r.json(); })
+            .then(function(res){ if(res.ok){ if(onOk) onOk(res.result); } else fail(new Error(res.error)); })
+            .catch(fail);
+        };
+      }});
+    }
+    window.google = window.google || {};
+    google.script = { get run(){ return runner(null, null); } };
+  })();
+</script>
+<script>
   let allSubmissions = [];
   let statusMap = {}; // staffId -> {status, name, unit, updatedAt}
   let notebookMap = {}; // staffId -> {status, name, unit, updatedAt}
