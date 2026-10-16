@@ -9,7 +9,9 @@
  *
  * 部署後只有「一個網址」：
  *   .../exec         → 情緒打卡頁（同仁填寫用，預設首頁）
- *   .../exec?page=admin → 後台管理頁（承辦人員用）
+ *   .../exec?page=admin → 後台管理頁（承辦人員用；?page=dashboard 也可以）
+ *
+ * Apps Script 專案裡的 HTML 檔名必須是 index、dashboard（不含 .html）
  */
 
 var SHEET_SUBMIT = '打卡紀錄';
@@ -24,12 +26,12 @@ var GIFT_HEADERS = ['staffId','name','unit','status','notebookStatus','updatedAt
 // ---------------- 網頁路由 ----------------
 function doGet(e){
   var page = (e && e.parameter && e.parameter.page) || 'checkin';
-  if(page === 'admin'){
-    return HtmlService.createHtmlOutputFromFile('admin')
+  if(page === 'admin' || page === 'dashboard'){
+    return HtmlService.createHtmlOutputFromFile('dashboard')
       .setTitle('SEL 情緒充電站｜後台管理')
       .addMetaTag('viewport', 'width=device-width, initial-scale=1');
   }
-  return HtmlService.createHtmlOutputFromFile('checkin')
+  return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('SEL 情緒充電站')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
