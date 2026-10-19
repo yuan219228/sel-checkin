@@ -661,7 +661,7 @@
   // 這段會用 fetch 呼叫 Apps Script 的 doPost 來代替，原本的程式碼不用改。
   // 請把下面的 GAS_URL 換成 Apps Script 部署後的「網頁應用程式」網址（結尾是 /exec）。
   (function(){
-    var GAS_URL = '';
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbz3oFAq61hLNhTrKwLKGsYe1QdAOZNDHwaZJvl03oYkDgI1OQsJ5pEsBNnw14enuSPoNQ/exec';
     if(window.google && google.script && google.script.run) return;
     function runner(onOk, onFail){
       return new Proxy({}, { get: function(_, fn){
