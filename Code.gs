@@ -18,11 +18,19 @@
  * - 如果是獨立的 Apps Script 專案，請把試算表網址中 /d/ 和 /edit 之間那串 ID
  *   填到下面的 SPREADSHEET_ID，否則資料無處可寫。
  *
- * 網頁放在 GitHub Pages 時，網頁會改用 fetch 呼叫 doPost（見最下方），
+ * 網頁放在 GitHub Pages 時，網頁會改用 fetch 呼叫 doPost，
  * 部署時「誰可以存取」必須選「所有人」。
+ *
+ * 資料保護：
+ * - 對外（doPost）只開放「送出打卡」和「查自己的累積天數」，讀不到任何人的資料。
+ * - 後台（getData、切換領取狀態）只有 ADMIN_EMAILS 裡的帳號、
+ *   從 Apps Script 網址（.../exec?page=admin）登入 Google 開啟時才能用。
  */
 
 var SPREADSHEET_ID = '';
+
+// 可以看後台的 Google 帳號；留空 = 只有部署這支程式的帳號本人
+var ADMIN_EMAILS = [];
 
 var SHEET_SUBMIT = '打卡紀錄';
 var SHEET_GIFT    = '禮物狀態';
@@ -48,11 +56,10 @@ function doGet(e){
 
 // ---------------- 給 GitHub Pages 等外部網頁呼叫（fetch POST） ----------------
 // 網頁送來 {fn:'submitCheckin', args:[...]}，回傳 {ok:true, result:...}
+// 這裡只放「不會洩漏別人資料」的函式，千萬不要把 getData 加進來
 var PUBLIC_FUNCTIONS = {
   submitCheckin: submitCheckin,
-  getData: getData,
-  setGiftStatus: setGiftStatus,
-  setNotebookStatus: setNotebookStatus
+  getProgress: getProgress
 };
 
 function doPost(e){
@@ -87,8 +94,8 @@ function submitCheckin(data){
 function submitCheckinLocked_(data){
   var staffId = normId_(data.staffId);
   var shS = getSheet_(SHEET_SUBMIT, SUBMIT_HEADERS);
-  shS.appendRow([
-    data.timestamp || new Date().toISOString(),
+  var row = [
+    new Date().toISOString(),
     data.name || '',
     data.unit || '',
     data.title || '',
@@ -104,14 +111,29 @@ function submitCheckinLocked_(data){
     data.moodChange || '',
     data.valence || '',
     data.feedback || ''
-  ]);
+  ].map(safeCell_);
+  shS.appendRow(row);
   ensureGiftRow_(staffId, data.name, data.unit);
   SpreadsheetApp.flush();
   return {ok:true};
 }
 
-// 後台／打卡頁查詢用：回傳所有資料
+// 打卡頁查詢用：只回傳這個員工編號累積打卡的天數
+function getProgress(staffId){
+  staffId = normId_(staffId);
+  if(!staffId) return {days:0};
+  var shS = getSheet_(SHEET_SUBMIT, SUBMIT_HEADERS);
+  var days = {};
+  sheetToObjects_(shS).forEach(function(r){
+    if(normId_(r.staffId) === staffId) days[dateOnly_(r.timestamp)] = true;
+  });
+  delete days[''];
+  return {days: Object.keys(days).length};
+}
+
+// 後台用：回傳所有資料（限管理者）
 function getData(){
+  requireAdmin_();
   var shS = getSheet_(SHEET_SUBMIT, SUBMIT_HEADERS);
   var shG = getSheet_(SHEET_GIFT, GIFT_HEADERS);
 
@@ -131,6 +153,7 @@ function getData(){
 
 // 後台：切換「筆」的領取狀態
 function setGiftStatus(staffId, status, name, unit){
+  requireAdmin_();
   staffId = normId_(staffId);
   var shG = getSheet_(SHEET_GIFT, GIFT_HEADERS);
   var rowIdx = findGiftRow_(shG, staffId);
@@ -144,6 +167,7 @@ function setGiftStatus(staffId, status, name, unit){
 
 // 後台：切換「筆記本」的領取狀態
 function setNotebookStatus(staffId, status, name, unit){
+  requireAdmin_();
   staffId = normId_(staffId);
   var shG = getSheet_(SHEET_GIFT, GIFT_HEADERS);
   var rowIdx = findGiftRow_(shG, staffId);
@@ -156,6 +180,25 @@ function setNotebookStatus(staffId, status, name, unit){
 }
 
 // ---------------- 內部工具函式 ----------------
+function requireAdmin_(){
+  var me = String(Session.getActiveUser().getEmail() || '').toLowerCase();
+  var owner = String(Session.getEffectiveUser().getEmail() || '').toLowerCase();
+  var admins = ADMIN_EMAILS.length
+    ? ADMIN_EMAILS.map(function(x){ return String(x).toLowerCase(); })
+    : [owner];
+  if(!me || admins.indexOf(me) === -1){
+    throw new Error('沒有權限：請用管理者的 Google 帳號登入後，從 Apps Script 網址開啟後台');
+  }
+}
+
+// 擋掉試算表公式注入（例如填入 =IMPORTXML(...)），並限制長度
+function safeCell_(v){
+  if(typeof v === 'number' || typeof v === 'boolean') return v;
+  v = String(v == null ? '' : v).slice(0, 2000);
+  if(v !== '' && !isNaN(Number(v))) return v;   // 數字（含負數）照原樣
+  return /^[=+\-@]/.test(v) ? "'" + v : v;
+}
+
 function getSpreadsheet_(){
   var id = SPREADSHEET_ID ||
     PropertiesService.getScriptProperties().getProperty('SPREADSHEET_ID');
