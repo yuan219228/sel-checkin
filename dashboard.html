@@ -652,13 +652,29 @@
   }
 
   // ---------------- 真實資料載入（google.script.run，與本頁同一個 Apps Script 專案） ----------------
+  // 後台為了保護資料，只能在 Apps Script 網址上讀資料；從 GitHub Pages 打開時自動轉過去
+  const ADMIN_URL = 'https://script.google.com/macros/s/AKfycbz3oFAq61hLNhTrKwLKGsYe1QdAOZNDHwaZJvl03oYkDgI1OQsJ5pEsBNnw14enuSPoNQ/exec?page=admin';
+  const IN_APPS_SCRIPT = !!(window.google && google.script && google.script.run);
+  if(!IN_APPS_SCRIPT && /github\.io$/.test(location.hostname)) location.replace(ADMIN_URL);
+
   function loadData(){
     const statusEl = document.getElementById('loadStatus');
     statusEl.classList.remove('err');
+    if(!IN_APPS_SCRIPT){
+      statusEl.innerHTML = '後台只能從 Apps Script 網址開啟：<a href="' + ADMIN_URL + '">點這裡前往</a>';
+      statusEl.classList.add('err');
+      return;
+    }
     statusEl.textContent = '載入中…';
+    const slow = setTimeout(function(){
+      statusEl.textContent = '載入超過 20 秒仍沒有回應：如果瀏覽器同時登入多個 Google 帳號，請改用無痕視窗只登入管理者帳號再開一次。';
+      statusEl.classList.add('err');
+    }, 20000);
 
     google.script.run
       .withSuccessHandler(function(data){
+        clearTimeout(slow);
+        statusEl.classList.remove('err');
         usingDemo = false;
         const subs = (data && Array.isArray(data.submissions)) ? data.submissions : [];
         const gs = (data && Array.isArray(data.giftStatus)) ? data.giftStatus : [];
@@ -672,6 +688,7 @@
         applyFilters();
       })
       .withFailureHandler(function(err){
+        clearTimeout(slow);
         statusEl.textContent = '載入失敗：' + (err && err.message ? err.message : err);
         statusEl.classList.add('err');
       })
