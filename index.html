@@ -701,9 +701,7 @@
     targetEl.style.display = 'block';
     google.script.run
       .withSuccessHandler(function(data){
-        const days = new Set();
-        ((data && data.dailyCheckins) || []).forEach(r=>{ if(String(r.staffId).toUpperCase() === staffId.toUpperCase()) days.add(r.date); });
-        const n = days.size;
+        const n = (data && data.days) || 0;
         const penDone = n >= PEN_THRESHOLD, nbDone = n >= NOTEBOOK_THRESHOLD;
         const msg = inline
           ? ('目前已累積 <strong>' + n + '</strong> 天。' + (nbDone ? '筆與情緒記錄本都已達成資格！' : penDone ? '筆已達成資格，再 ' + (NOTEBOOK_THRESHOLD-n) + ' 天可以拿情緒記錄本。' : '再 ' + (PEN_THRESHOLD-n) + ' 天可以拿筆。'))
@@ -713,7 +711,7 @@
       .withFailureHandler(function(err){
         targetEl.innerHTML = '進度查詢失敗（' + (err && err.message ? err.message : err) + '），請稍後再試一次。';
       })
-      .getData();
+      .getProgress(staffId);
   }
 
   const state = {
