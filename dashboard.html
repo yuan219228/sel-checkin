@@ -676,16 +676,24 @@
         clearTimeout(slow);
         statusEl.classList.remove('err');
         usingDemo = false;
-        const subs = (data && Array.isArray(data.submissions)) ? data.submissions : [];
-        const gs = (data && Array.isArray(data.giftStatus)) ? data.giftStatus : [];
+        // 試算表會把「123」這類內容存成數字，這裡一律轉成文字，避免後面 .trim() 等字串處理出錯
+        const asText = o => { const r = {}; Object.keys(o||{}).forEach(k=>{ r[k] = o[k]==null ? '' : String(o[k]); }); return r; };
+        const subs = ((data && Array.isArray(data.submissions)) ? data.submissions : []).map(asText);
+        const gs = ((data && Array.isArray(data.giftStatus)) ? data.giftStatus : []).map(asText);
         allSubmissions = subs;
         statusMap = {};
         gs.forEach(g=>{ statusMap[g.staffId] = g; });
-        dailyRecords = (data && Array.isArray(data.dailyCheckins)) ? data.dailyCheckins : [];
+        dailyRecords = ((data && Array.isArray(data.dailyCheckins)) ? data.dailyCheckins : []).map(asText);
         notebookMap = {};
-        ((data && Array.isArray(data.notebookStatus)) ? data.notebookStatus : []).forEach(g=>{ notebookMap[g.staffId] = g; });
+        ((data && Array.isArray(data.notebookStatus)) ? data.notebookStatus : []).map(asText).forEach(g=>{ notebookMap[g.staffId] = g; });
         statusEl.textContent = '已載入，共 ' + subs.length + ' 筆（' + new Date().toLocaleTimeString('zh-TW') + '）';
-        applyFilters();
+        try{
+          applyFilters();
+        }catch(e){
+          console.error(e);
+          statusEl.textContent = '資料已載入，但統計畫面發生錯誤：' + e.message + '（請截圖給維護人員）';
+          statusEl.classList.add('err');
+        }
       })
       .withFailureHandler(function(err){
         clearTimeout(slow);
