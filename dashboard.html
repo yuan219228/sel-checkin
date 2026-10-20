@@ -245,6 +245,36 @@
 .filter-bar #valenceFilter{flex:0 0 150px}
 .filter-bar #dateRangeFilter{flex:0 0 170px}
 
+
+  /* ---------- 日常運用（小回顧） ---------- */
+  .rfd{--s1:#F3E3CF;--s2:#E6C29C;--s3:#D69468;--s4:#C96E45;--s5:#8F4422;display:flex;flex-direction:column;gap:16px;}
+  .rfd-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;}
+  .rfd-kpi{background:var(--cream);border-radius:14px;padding:12px 14px;}
+  .rfd-kpi .v{font-family:"Noto Serif TC",serif;font-size:28px;font-weight:700;color:var(--clay-dark);font-variant-numeric:tabular-nums;line-height:1.2;}
+  .rfd-kpi .v small{font-size:14px;color:var(--ink-soft);font-weight:500;margin-left:3px;}
+  .rfd-kpi .k{font-size:13px;color:var(--ink-soft);}
+  .rfd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;}
+  .rfd-box{border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;min-width:0;}
+  .rfd-box h3{margin:0;font-family:"Noto Serif TC",serif;font-size:17px;}
+  .rfd-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-soft);}
+  .rfd-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
+  .rfd-qt{font-size:14px;font-weight:500;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+  .rfd-delta{font-size:12.5px;font-weight:700;color:#5E6B3A;background:#E4EBD3;border-radius:99px;padding:0 8px;white-space:nowrap;}
+  .rfd-delta.neg{color:#8A3B2E;background:#F6DCD5;}
+  .rfd-pair{display:grid;grid-template-columns:auto minmax(0,1fr) 44px;gap:6px 10px;align-items:center;font-size:13px;margin-top:8px;}
+  .rfd-pair .who{color:var(--ink-soft);white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .rfd-pair .pct{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;}
+  .rfd-stack{display:flex;height:20px;border-radius:6px;overflow:hidden;background:var(--s1);}
+  .rfd-stack span{display:block;height:100%;}
+  .rfd-note{font-size:12px;color:var(--ink-soft);margin:0;}
+  .rfd-bars{display:flex;flex-direction:column;gap:8px;}
+  .rfd-bar{display:grid;grid-template-columns:minmax(0,7em) minmax(0,1fr) 32px;gap:10px;align-items:center;font-size:13px;}
+  .rfd-bar .t{height:14px;border-radius:5px;background:var(--s1);overflow:hidden;}
+  .rfd-bar .t span{display:block;height:100%;background:var(--s4);border-radius:5px;}
+  .rfd-bar .n{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-soft);}
+  .rfd-quotes{list-style:none;margin:0;padding:0;display:grid;gap:8px;max-height:420px;overflow:auto;}
+  .rfd-quotes li{background:var(--cream);border-radius:12px;padding:10px 14px;font-size:14px;}
+  .rfd-quotes li span{display:block;font-size:12px;color:var(--ink-soft);margin-top:2px;}
 </style>
 </head>
 <body>
@@ -267,6 +297,7 @@
     <a href="#panel-events">事件分析</a>
     <a href="#panel-moodeffect">各感受成效</a>
     <a href="#panel-month">月度變化</a>
+    <a href="#panel-reflect">日常運用</a>
     <a href="#panel-feedback">開放留言</a>
   </nav>
 
@@ -471,6 +502,12 @@
     <div id="monthWrap"><div class="empty">尚未載入資料。</div></div>
   </div>
 
+  <div class="panel" id="panel-reflect">
+    <h2>日常運用：前後對照</h2>
+    <p class="sub">小回顧的結果：第 1 天前測、第 3 天後測、第 5 天再測。後測只計算「有做前測」的人，才能跟同一群人的前測比較。不受上方篩選影響。</p>
+    <div id="reflectWrap"><div class="empty">尚未載入資料。</div></div>
+  </div>
+
   <div class="panel" id="panel-feedback">
     <h2>開放式留言整理</h2>
     <p class="sub">把三個開放式欄位集中在一起，方便你定期匯出、跟主管討論：「希望單位提供的支持」「想對自己說的話」這兩項現在是必填，筆數應該會接近總留言數；「其他」事件的補充說明仍是選填，只有選了「其他」標籤的人才會有。</p>
@@ -492,6 +529,7 @@
 
 <script>
   let allSubmissions = [];
+  let allReflections = []; // 小回顧（日常運用）
   let statusMap = {}; // staffId -> {status, name, unit, updatedAt}
   let notebookMap = {}; // staffId -> {status, name, unit, updatedAt}
   let dailyRecords = []; // {staffId, date}
@@ -633,6 +671,7 @@
     });
 
     allSubmissions = demo;
+    allReflections = demoReflections(demo, demoDaily);
     dailyRecords = demoDaily;
     notebookMap = {};
     // 示範：隨機挑一些已達成資格的人標成已領取，模擬現場已發放的狀況
@@ -648,6 +687,7 @@
     const statusEl = document.getElementById('loadStatus');
     statusEl.classList.remove('err');
     statusEl.textContent = '目前顯示「示範資料」共 ' + demo.length + ' 筆（' + Object.keys(demoStatus).length + ' 人・示範每日打卡 ' + demoDaily.length + ' 筆），僅供預覽版面；按「重新整理資料」即可切換回正式資料。';
+    renderReflect();
     applyFilters();
   }
 
@@ -681,6 +721,7 @@
         const subs = ((data && Array.isArray(data.submissions)) ? data.submissions : []).map(asText);
         const gs = ((data && Array.isArray(data.giftStatus)) ? data.giftStatus : []).map(asText);
         allSubmissions = subs;
+        allReflections = ((data && Array.isArray(data.reflections)) ? data.reflections : []).map(asText);
         statusMap = {};
         gs.forEach(g=>{ statusMap[g.staffId] = g; });
         dailyRecords = ((data && Array.isArray(data.dailyCheckins)) ? data.dailyCheckins : []).map(asText);
@@ -688,6 +729,7 @@
         ((data && Array.isArray(data.notebookStatus)) ? data.notebookStatus : []).map(asText).forEach(g=>{ notebookMap[g.staffId] = g; });
         statusEl.textContent = '已載入，共 ' + subs.length + ' 筆（' + new Date().toLocaleTimeString('zh-TW') + '）';
         try{
+          renderReflect();
           applyFilters();
         }catch(e){
           console.error(e);
@@ -1407,6 +1449,104 @@
       });
     });
     return out.sort((a,b)=> new Date(b.d.timestamp) - new Date(a.d.timestamp));
+  }
+
+
+  // ---------------- 日常運用（小回顧） ----------------
+  const RF_SCALE5 = ['從來沒有','偶爾','一半一半','常常','幾乎每次'];
+  const RF_Q4 = ['沒有','1 次','2–3 次','4 次以上'];
+  const RF_Q5 = ['深呼吸','暫時離開現場','跟同事或朋友聊聊','寫下來','轉移注意力','先忍著','其他'];
+  const RF_SC = ['var(--s1)','var(--s2)','var(--s3)','var(--s4)','var(--s5)'];
+  const RF_SC4 = ['var(--s1)','var(--s2)','var(--s4)','var(--s5)'];
+
+  function demoReflections(demo, demoDaily){
+    // 示範：依每人示範打卡天數產生前測／第 3 天／第 5 天，後測略好一點
+    const out = [];
+    const ids = [...new Set(demo.map(d=>d.staffId))];
+    const pickW = (opts, w)=>{ let r = Math.random()*w.reduce((a,b)=>a+b,0); for(let i=0;i<opts.length;i++){ r -= w[i]; if(r<=0) return opts[i]; } return opts[opts.length-1]; };
+    ids.forEach(id=>{
+      const d = demo.find(x=>x.staffId===id);
+      const days = demoDaily.filter(r=>r.staffId===id).length;
+      const phases = ['前測'].concat(days>=3 ? ['第3天'] : []).concat(days>=5 ? ['第5天'] : []);
+      phases.forEach((ph, k)=>{
+        const lift = k; // 越後面越好一點
+        out.push({ staffId:id, name:d.name, unit:d.unit, phase:ph, timestamp:new Date().toISOString(),
+          q1: pickW(RF_SCALE5, [5-lift*2,16-lift*4,12,10+lift*3,4+lift*2]),
+          q2: pickW(RF_SCALE5, [6-lift*2,16-lift*4,13,9+lift*3,4+lift*2]),
+          q3: ph==='前測' ? '' : pickW(['比較難','差不多','比較容易'], [1,4,5+lift]),
+          q4: pickW(RF_Q4, [20-lift*7,13-lift*2,10+lift*3,5+lift*3]),
+          q5: RF_Q5.filter((m,i)=>Math.random() < [0.55,0.2,0.3,0.12,0.35,0.3,0.03][i]).join('、') || '深呼吸',
+          q6: ph==='前測' ? pickW(['沒有遇到這種情況','有遇到，但沒停下來','有停下來'],[4,4,3]) : pickW(['沒有遇到這種情況','有遇到，但沒停下來','有停下來'],[4,3-lift,4+lift]),
+          q7: ph!=='前測' && Math.random()<0.3 ? ['開會前發現肩膀很緊，先做了三次深呼吸才進去。','家屬大聲時先察覺到自己也在生氣，就先離開一下再回來。','下班前會想一下今天是什麼情緒，比較不會帶回家。'][Math.floor(Math.random()*3)] : '' });
+      });
+    });
+    return out;
+  }
+
+  function renderReflect(){
+    const wrap = document.getElementById('reflectWrap');
+    const pre = {}, d3 = {}, d5 = {};
+    allReflections.forEach(r=>{
+      const m = r.phase==='前測' ? pre : r.phase==='第3天' ? d3 : r.phase==='第5天' ? d5 : null;
+      if(m && r.staffId && !m[r.staffId]) m[r.staffId] = r;
+    });
+    const preL = Object.values(pre);
+    if(!allReflections.length){ wrap.innerHTML = '<div class="empty">還沒有人填過小回顧。同仁第一次打卡時會出現前測題目。</div>'; return; }
+    const d3L = Object.keys(d3).filter(id=>pre[id]).map(id=>d3[id]);
+    const d5L = Object.keys(d5).filter(id=>pre[id]).map(id=>d5[id]);
+    const paired = Object.keys(pre).filter(id=>d3[id] || d5[id]);
+    const latest = paired.map(id=>d5[id] || d3[id]);
+
+    const dist = (list, key, opts)=> opts.map(o=>list.filter(r=>(r[key]||'').trim()===o).length);
+    const share = (arr, from)=>{ const t = arr.reduce((a,b)=>a+b,0); return t ? Math.round(arr.slice(from).reduce((a,b)=>a+b,0)/t*100) : null; };
+    const fmt = v => v==null ? '–' : v+'%';
+    const stack = (arr, colors)=>{ const t = arr.reduce((a,b)=>a+b,0) || 1;
+      return '<div class="rfd-stack">'+arr.map((v,i)=>'<span style="width:'+(v/t*100).toFixed(1)+'%;background:'+colors[i]+'" title="'+v+' 人"></span>').join('')+'</div>'; };
+    const legend = (labels, colors)=>'<div class="rfd-legend">'+labels.map((l,i)=>'<span><i style="background:'+colors[i]+'"></i>'+esc(l)+'</span>').join('')+'</div>';
+    function block(title, key, opts, colors, from, hiLabel){
+      const rows = [['前測', preL], ['第 3 天', d3L], ['第 5 天', d5L]].filter(r=>r[1].length);
+      const dd = rows.map(([w, l])=>[w, l.length, dist(l, key, opts)]);
+      const first = share(dd[0] ? dd[0][2] : [], from), last = dd.length > 1 ? share(dd[dd.length-1][2], from) : null;
+      const delta = (first!=null && last!=null) ? last - first : null;
+      return '<div><div class="rfd-qt"><span>'+title+'</span>' +
+        (delta!=null ? '<span class="rfd-delta'+(delta<0?' neg':'')+'">'+esc(dd[dd.length-1][0])+'比前測 '+hiLabel+' '+(delta>=0?'+':'')+delta+' 個百分點</span>' : '') + '</div>' +
+        '<div class="rfd-pair">' + dd.map(([w,n,arr])=>'<div class="who">'+w+'（'+n+'）</div>'+stack(arr, colors)+'<div class="pct">'+fmt(share(arr, from))+'</div>').join('') + '</div></div>';
+    }
+    const q5 = RF_Q5.map(m=>[m, latest.filter(r=>(r.q5||'').split('、').indexOf(m)>=0).length]).sort((a,b)=>b[1]-a[1]);
+    const q5max = Math.max(1, ...q5.map(x=>x[1]));
+    const q3 = dist(latest, 'q3', ['比較難','差不多','比較容易']);
+    const q6 = dist(latest, 'q6', ['沒有遇到這種情況','有遇到，但沒停下來','有停下來']);
+    const c3 = ['var(--s2)','var(--s1)','var(--s4)'];
+    const stories = allReflections.filter(r=>r.phase!=='前測' && (r.q7||'').trim()).sort((a,b)=>String(b.timestamp).localeCompare(String(a.timestamp)));
+
+    wrap.innerHTML = '<div class="rfd">' +
+      '<div class="rfd-kpis">' +
+        '<div class="rfd-kpi"><div class="v">'+preL.length+'<small>人</small></div><div class="k">做了前測（第 1 天）</div></div>' +
+        '<div class="rfd-kpi"><div class="v">'+paired.length+'<small>人</small></div><div class="k">前後都有填，可以對照</div></div>' +
+        '<div class="rfd-kpi"><div class="v">'+d3L.length+'<small>人</small></div><div class="k">第 3 天後測</div></div>' +
+        '<div class="rfd-kpi"><div class="v">'+d5L.length+'<small>人</small></div><div class="k">第 5 天再測</div></div>' +
+      '</div>' +
+      '<div class="rfd-grid">' +
+        '<div class="rfd-box"><h3>自我覺察</h3>' + legend(RF_SCALE5, RF_SC) +
+          block('當下察覺「我現在有情緒」', 'q1', RF_SCALE5, RF_SC, 3, '常常以上') +
+          block('注意到身體的壓力訊號', 'q2', RF_SCALE5, RF_SC, 3, '常常以上') +
+          '<p class="rfd-note">括號內是人數；右邊的百分比＝回答「常常」或「幾乎每次」的比例。</p></div>' +
+        '<div class="rfd-box"><h3>自我管理</h3>' + legend(RF_Q4, RF_SC4) +
+          block('主動用深呼吸或其他方法讓自己緩一下', 'q4', RF_Q4, RF_SC4, 2, '2 次以上') +
+          '<p class="rfd-note">右邊的百分比＝過去一週 2 次以上的比例。</p></div>' +
+      '</div>' +
+      '<div class="rfd-grid">' +
+        '<div class="rfd-box"><h3>情緒上來時會怎麼做</h3><p class="rfd-note">每人最後一次後測，可複選，n = '+latest.length+'</p><div class="rfd-bars">' +
+          q5.map(([k,v])=>'<div class="rfd-bar"><span>'+esc(k)+'</span><div class="t"><span style="width:'+(v/q5max*100)+'%"></span></div><span class="n">'+v+'</span></div>').join('') + '</div></div>' +
+        '<div class="rfd-box"><h3>只在後測問的題目</h3><p class="rfd-note">每人最後一次後測，n = '+latest.length+'</p>' +
+          '<div><div class="rfd-qt"><span>能更快說出自己是什麼情緒</span><span class="rfd-delta">比較容易 '+fmt(share(q3,2))+'</span></div><div style="margin-top:8px">'+stack(q3, c3)+'</div>'+legend(['比較難','差不多','比較容易'], c3)+'</div>' +
+          '<div><div class="rfd-qt"><span>快發脾氣前先停下來</span><span class="rfd-delta">有停下來 '+fmt(share(q6,2))+'</span></div><div style="margin-top:8px">'+stack(q6, ['var(--s1)','var(--s2)','var(--s4)'])+'</div>'+legend(['沒有遇到','有遇到但沒停下來','有停下來'], ['var(--s1)','var(--s2)','var(--s4)'])+'</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="rfd-box"><h3>經驗分享（'+stories.length+' 則）</h3>' +
+        (stories.length ? '<ul class="rfd-quotes">'+stories.map(r=>'<li>'+esc(r.q7)+'<span>'+esc([r.name, r.unit, r.phase].filter(Boolean).join('・'))+'</span></li>').join('')+'</ul>' : '<div class="empty">還沒有人分享。</div>') +
+      '</div>' +
+    '</div>';
   }
 
   function renderFeedback(){

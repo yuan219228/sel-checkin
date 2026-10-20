@@ -542,6 +542,31 @@
   @keyframes bz-msgin{0%{transform:translateY(8px) scale(.96);opacity:.3}100%{transform:none;opacity:1}}
 
 
+
+  /* ---------- 小回顧（日常運用） ---------- */
+  .rf .rf-sec{display:flex;flex-direction:column;gap:18px;margin-top:6px;}
+  .rf .rf-head{display:flex;align-items:center;gap:10px;font-family:"Noto Serif TC",serif;font-weight:700;font-size:17px;}
+  .rf .rf-head .bun{width:48px;height:48px;flex:none;vertical-align:0;}
+  .rf .rf-head small{display:block;font-family:"Noto Sans TC",sans-serif;font-weight:400;font-size:13px;color:var(--ink-soft);}
+  .rf .rf-divider{height:1px;background:var(--line);margin:22px 0 16px;}
+  .rf .rf-q{display:flex;flex-direction:column;gap:8px;}
+  .rf .rf-q > .rf-label{font-size:15px;font-weight:500;line-height:1.55;}
+  .rf .rf-num{color:var(--clay);font-weight:700;margin-right:4px;}
+  .rf .rf-note{font-size:13px;color:var(--ink-soft);margin-top:-4px;}
+  .rf .rf-opts{display:flex;flex-wrap:wrap;gap:8px;}
+  .rf .rf-opts.scale{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;}
+  .rf .rf-opt{border:1px solid var(--line);background:var(--cream);border-radius:var(--radius-sm);padding:10px 10px;font:14px "Noto Sans TC",sans-serif;color:var(--ink);cursor:pointer;text-align:center;line-height:1.35;}
+  .rf .rf-opts.scale .rf-opt{padding:11px 2px;font-size:13.5px;}
+  .rf .rf-opt[aria-pressed="true"]{border-color:var(--clay);background:var(--clay-tint);color:var(--clay-dark);font-weight:700;}
+  .rf .rf-opts.multi .rf-opt{border-radius:999px;padding:8px 14px;}
+  .rf .rf-opts.multi .rf-opt[aria-pressed="true"]{border-color:var(--sage);background:var(--sage-tint);color:#5E5B3D;}
+  .rf .rf-opt:focus-visible{outline:3px solid var(--clay-dark);outline-offset:2px;}
+  .rf .rf-ends{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);}
+  .rf .rf-err{font-size:13px;color:var(--danger);}
+  .rf textarea{width:100%;min-height:84px;border:1px solid var(--line);background:var(--cream);border-radius:var(--radius-sm);padding:10px 12px;font:15px "Noto Sans TC",sans-serif;color:var(--ink);resize:vertical;}
+  .rf .error-msg{margin-top:16px;}
+  @media (max-width:400px){ .rf .rf-opts.scale{grid-template-columns:repeat(3,minmax(0,1fr));} .rf .rf-ends{display:none;} }
+  @media (min-width:900px){ .rf .rf-q > .rf-label{font-size:16px;} .rf .rf-opts.scale .rf-opt{font-size:14.5px;padding:12px 4px;} }
 </style>
 </head>
 <body>
@@ -633,6 +658,25 @@
 
       <div class="btn-row">
         <button class="btn-primary btn-full" onclick="goNext(1)">下一步</button>
+      </div>
+    </section>
+
+    <!-- 小回顧：第 1 天前測、第 3 天後測、第 5 天再測（由 Apps Script 判斷今天要不要問） -->
+    <section class="step rf" data-step="reflect">
+      <div class="step-label" id="rfEyebrow">小回顧</div>
+      <h2>花一分鐘，回頭看看這一週</h2>
+      <p class="hint" id="rfIntro"></p>
+      <div class="rf-sec" id="rfSecA">
+        <div class="rf-head"><svg class="bun" aria-hidden="true"><use href="#bun-aware"/></svg><div>自我覺察<small>能不能發現自己的情緒和身體訊號</small></div></div>
+      </div>
+      <div class="rf-divider"></div>
+      <div class="rf-sec" id="rfSecB">
+        <div class="rf-head"><svg class="bun" aria-hidden="true"><use href="#bun-manage"/></svg><div>自我管理<small>察覺之後，會不會做點什麼</small></div></div>
+      </div>
+      <div class="error-msg" id="err-reflect">還有題目沒有回答，標紅字的地方選一個就好。</div>
+      <div class="btn-row">
+        <button class="btn-ghost" onclick="showStep(1)">上一步</button>
+        <button class="btn-primary" onclick="Recap.next()">下一步，開始今天的打卡</button>
       </div>
     </section>
 
@@ -905,7 +949,9 @@
   function showStep(step){
     document.querySelectorAll('.step').forEach(el=>el.classList.remove('active'));
     document.querySelector('.step[data-step="'+step+'"]').classList.add('active');
-    if(step !== 'done'){
+    if(step === 'reflect'){
+      document.getElementById('progressFill').style.width = (1.5/totalSteps*100)+'%';
+    } else if(step !== 'done'){
       document.getElementById('progressFill').style.width = (step/totalSteps*100)+'%';
     } else {
       document.getElementById('progressFill').style.width = '100%';
@@ -1006,6 +1052,7 @@
     if(fromStep === 1 && !validateStep1()) return;
     if(fromStep === 1){
       document.getElementById('beforeTitle').textContent = state.moodBefore ? ('你的「' + state.moodBefore + '」現在有多強？') : '這份感受現在有多強？';
+      if(Recap.checkedFor !== state.staffId){ Recap.check(); return; }
     }
     if(fromStep === 2){ state.intensityBefore = document.getElementById('intensityBefore').value; }
     if(fromStep === 3){
@@ -1107,7 +1154,8 @@
       delta: parseInt(state.intensityBefore,10) - parseInt(state.intensityAfter,10),
       moodChange: state.moodChange,
       valence: POS_MOODS.indexOf(state.moodBefore) >= 0 ? '正向' : '負向',
-      feedback: document.getElementById('in-feedback').value.trim()
+      feedback: document.getElementById('in-feedback').value.trim(),
+      reflection: state.reflection || null
     };
   }
 
@@ -2064,6 +2112,124 @@ void main(){
       msgSmall.textContent = text || '資料已送出，請稍後再回來看看。';
     }
   };
+})();
+</script>
+
+<script>
+/* =========================================================
+   小回顧（日常運用）：第 1 天前測 5 題；第 3、5 天 7 題
+   ========================================================= */
+var Recap = (function(){
+  const SCALE5 = ['從來沒有','偶爾','一半一半','常常','幾乎每次'];
+  const QUESTIONS = [
+    { id:'q1', sec:'A', type:'scale', opts:SCALE5, label:'過去一週，當你情緒起伏時，有沒有在當下察覺「我現在有情緒」？' },
+    { id:'q2', sec:'A', type:'scale', opts:SCALE5, label:'過去一週，你有沒有注意到身體的壓力訊號？', note:'例如肩頸緊、胸口悶、呼吸變快' },
+    { id:'q3', sec:'A', type:'single', opts:['比較難','差不多','比較容易'], postOnly:true,
+      label:'比起剛開始參加活動，你現在能不能更快說出自己是什麼情緒？', note:'例如分辨出是「焦慮」，不只是「不舒服」' },
+    { id:'q4', sec:'B', type:'single', opts:['沒有','1 次','2–3 次','4 次以上'], label:'過去一週，你有沒有主動用深呼吸或其他方法讓自己緩一下？' },
+    { id:'q5', sec:'B', type:'multi', opts:['深呼吸','暫時離開現場','跟同事或朋友聊聊','寫下來','轉移注意力','先忍著','其他'],
+      label:'情緒上來的時候，你通常會怎麼做？', note:'可以複選' },
+    { id:'q6', sec:'B', type:'single', opts:['沒有遇到這種情況','有遇到，但沒停下來','有停下來'],
+      label:'過去一週，你有沒有在快要發脾氣或說出後悔的話之前，先停下來過？' },
+    { id:'q7', sec:'B', type:'text', postOnly:true, optional:true,
+      label:'能不能分享一次，你在工作中察覺到自己的情緒，並做了一些調整的經驗？', note:'選填，一兩句就好' }
+  ];
+  const INTRO = {
+    '前測':'沒有標準答案，誠實回答就好。第 3 天和第 5 天會再問一次，看看參加活動之後有沒有不一樣。',
+    '第3天':'你已經來了 3 天！跟第一次比起來，這幾天你的日常有沒有一點點改變？誠實回答就好。',
+    '第5天':'第 5 天了，謝謝你一路陪著自己。再回頭看看這幾天，有沒有什麼不一樣？'
+  };
+  const EYEBROW = { '前測':'小回顧・第 1 次', '第3天':'小回顧・第 3 天', '第5天':'小回顧・第 5 天' };
+  let phase = '';
+  let answers = {};
+
+  function el(tag, cls, html){ const e = document.createElement(tag); if(cls) e.className = cls; if(html != null) e.innerHTML = html; return e; }
+
+  function render(){
+    answers = {};
+    document.querySelectorAll('.rf .rf-q').forEach(n=>n.remove());
+    document.getElementById('rfIntro').textContent = INTRO[phase];
+    document.getElementById('rfEyebrow').textContent = EYEBROW[phase];
+    document.getElementById('err-reflect').classList.remove('show');
+    let n = 0;
+    QUESTIONS.forEach(q=>{
+      if(q.postOnly && phase === '前測') return;
+      n++;
+      const box = el('div','rf-q'); box.dataset.q = q.id;
+      const lab = el('div','rf-label', '<span class="rf-num">'+n+'.</span>'+q.label); lab.id = 'rf-lab-'+q.id;
+      box.appendChild(lab);
+      if(q.note) box.appendChild(el('div','rf-note', q.note));
+      if(q.type === 'text'){
+        const t = document.createElement('textarea'); t.id = 'rf-'+q.id; t.setAttribute('aria-labelledby', lab.id);
+        t.addEventListener('input', ()=>{ answers[q.id] = t.value.trim(); });
+        box.appendChild(t);
+      } else {
+        const wrap = el('div', 'rf-opts' + (q.type==='scale' ? ' scale' : q.type==='multi' ? ' multi' : ''));
+        wrap.setAttribute('role','group'); wrap.setAttribute('aria-labelledby', lab.id);
+        q.opts.forEach(o=>{
+          const b = el('button','rf-opt'); b.type = 'button'; b.textContent = o; b.setAttribute('aria-pressed','false');
+          b.addEventListener('click', ()=>{
+            if(q.type === 'multi'){
+              b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+              answers[q.id] = [...wrap.querySelectorAll('[aria-pressed="true"]')].map(x=>x.textContent);
+            } else {
+              wrap.querySelectorAll('.rf-opt').forEach(x=>x.setAttribute('aria-pressed', x===b ? 'true' : 'false'));
+              answers[q.id] = o;
+            }
+            const err = box.querySelector('.rf-err'); if(err) err.remove();
+          });
+          wrap.appendChild(b);
+        });
+        box.appendChild(wrap);
+        if(q.type === 'scale') box.appendChild(el('div','rf-ends','<span>很少</span><span>很常</span>'));
+      }
+      document.getElementById(q.sec === 'A' ? 'rfSecA' : 'rfSecB').appendChild(box);
+    });
+  }
+
+  const api = {
+    checkedFor: null,
+    // 第 1 步按「下一步」時呼叫：問 Apps Script 今天要不要出題
+    check: function(){
+      const btn = document.querySelector('.step[data-step="1"] .btn-primary');
+      const label = btn.textContent;
+      btn.disabled = true; btn.textContent = '準備中…';
+      const staffId = state.staffId;
+      let finished = false;
+      const go = function(p){
+        if(finished) return; finished = true;
+        btn.disabled = false; btn.textContent = label;
+        api.checkedFor = staffId;
+        phase = INTRO[p] ? p : '';
+        state.reflection = null;
+        if(phase){ render(); currentStep = 1; showStep('reflect'); }
+        else { currentStep = 2; showStep(2); }
+      };
+      setTimeout(function(){ go(''); }, 8000);   // 查太久就先跳過，不要卡住打卡
+      google.script.run
+        .withSuccessHandler(function(r){ go(r && r.phase); })
+        .withFailureHandler(function(){ go(''); })
+        .getReflectionPhase(staffId);
+    },
+    next: function(){
+      let first = null;
+      document.querySelectorAll('.rf .rf-q').forEach(box=>{
+        const q = QUESTIONS.find(x=>x.id===box.dataset.q);
+        const a = answers[q.id];
+        const old = box.querySelector('.rf-err'); if(old) old.remove();
+        if(!q.optional && (a == null || (Array.isArray(a) && !a.length))){
+          box.appendChild(el('div','rf-err', q.type==='multi' ? '至少選一個。' : '請選一個最接近的答案。'));
+          if(!first) first = box;
+        }
+      });
+      document.getElementById('err-reflect').classList.toggle('show', !!first);
+      if(first){ first.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+      state.reflection = Object.assign({ phase: phase }, answers);
+      currentStep = 2;
+      showStep(2);
+    }
+  };
+  return api;
 })();
 </script>
 </body>
