@@ -504,7 +504,7 @@
 
   <div class="panel" id="panel-reflect">
     <h2>日常運用：前後對照</h2>
-    <p class="sub">小回顧的結果：第 1 天前測、第 3 天後測、第 5 天再測。後測只計算「有做前測」的人，才能跟同一群人的前測比較。不受上方篩選影響。</p>
+    <p class="sub">小回顧的結果：第 1 天前測 3 題、第 3 天後測 7 題、第 5 天再測 3 題。前後對照只計算「有做前測」的人；因應方式、先停下來、經驗分享只在第 3 天問。不受上方篩選影響。</p>
     <div id="reflectWrap"><div class="empty">尚未載入資料。</div></div>
   </div>
 
@@ -1473,11 +1473,11 @@
         out.push({ staffId:id, name:d.name, unit:d.unit, phase:ph, timestamp:new Date().toISOString(),
           q1: pickW(RF_SCALE5, [5-lift*2,16-lift*4,12,10+lift*3,4+lift*2]),
           q2: pickW(RF_SCALE5, [6-lift*2,16-lift*4,13,9+lift*3,4+lift*2]),
-          q3: ph==='前測' ? '' : pickW(['比較難','差不多','比較容易'], [1,4,5+lift]),
+          q3: ph!=='第3天' ? '' : pickW(['比較難','差不多','比較容易'], [1,4,5+lift]),
           q4: pickW(RF_Q4, [20-lift*7,13-lift*2,10+lift*3,5+lift*3]),
-          q5: RF_Q5.filter((m,i)=>Math.random() < [0.55,0.2,0.3,0.12,0.35,0.3,0.03][i]).join('、') || '深呼吸',
-          q6: ph==='前測' ? pickW(['沒有遇到這種情況','有遇到，但沒停下來','有停下來'],[4,4,3]) : pickW(['沒有遇到這種情況','有遇到，但沒停下來','有停下來'],[4,3-lift,4+lift]),
-          q7: ph!=='前測' && Math.random()<0.3 ? ['開會前發現肩膀很緊，先做了三次深呼吸才進去。','家屬大聲時先察覺到自己也在生氣，就先離開一下再回來。','下班前會想一下今天是什麼情緒，比較不會帶回家。'][Math.floor(Math.random()*3)] : '' });
+          q5: ph!=='第3天' ? '' : (RF_Q5.filter((m,i)=>Math.random() < [0.55,0.2,0.3,0.12,0.35,0.3,0.03][i]).join('、') || '深呼吸'),
+          q6: ph!=='第3天' ? '' : pickW(['沒有遇到這種情況','有遇到，但沒停下來','有停下來'],[4,2,5]),
+          q7: ph==='第3天' && Math.random()<0.3 ? ['開會前發現肩膀很緊，先做了三次深呼吸才進去。','家屬大聲時先察覺到自己也在生氣，就先離開一下再回來。','下班前會想一下今天是什麼情緒，比較不會帶回家。'][Math.floor(Math.random()*3)] : '' });
       });
     });
     return out;
@@ -1495,7 +1495,6 @@
     const d3L = Object.keys(d3).filter(id=>pre[id]).map(id=>d3[id]);
     const d5L = Object.keys(d5).filter(id=>pre[id]).map(id=>d5[id]);
     const paired = Object.keys(pre).filter(id=>d3[id] || d5[id]);
-    const latest = paired.map(id=>d5[id] || d3[id]);
 
     const dist = (list, key, opts)=> opts.map(o=>list.filter(r=>(r[key]||'').trim()===o).length);
     const share = (arr, from)=>{ const t = arr.reduce((a,b)=>a+b,0); return t ? Math.round(arr.slice(from).reduce((a,b)=>a+b,0)/t*100) : null; };
@@ -1512,10 +1511,12 @@
         (delta!=null ? '<span class="rfd-delta'+(delta<0?' neg':'')+'">'+esc(dd[dd.length-1][0])+'比前測 '+hiLabel+' '+(delta>=0?'+':'')+delta+' 個百分點</span>' : '') + '</div>' +
         '<div class="rfd-pair">' + dd.map(([w,n,arr])=>'<div class="who">'+w+'（'+n+'）</div>'+stack(arr, colors)+'<div class="pct">'+fmt(share(arr, from))+'</div>').join('') + '</div></div>';
     }
-    const q5 = RF_Q5.map(m=>[m, latest.filter(r=>(r.q5||'').split('、').indexOf(m)>=0).length]).sort((a,b)=>b[1]-a[1]);
+    // 因應方式、說出情緒、先停下來、經驗分享只在第 3 天問
+    const day3 = Object.values(d3);
+    const q5 = RF_Q5.map(m=>[m, day3.filter(r=>(r.q5||'').split('、').indexOf(m)>=0).length]).sort((a,b)=>b[1]-a[1]);
     const q5max = Math.max(1, ...q5.map(x=>x[1]));
-    const q3 = dist(latest, 'q3', ['比較難','差不多','比較容易']);
-    const q6 = dist(latest, 'q6', ['沒有遇到這種情況','有遇到，但沒停下來','有停下來']);
+    const q3 = dist(day3, 'q3', ['比較難','差不多','比較容易']);
+    const q6 = dist(day3, 'q6', ['沒有遇到這種情況','有遇到，但沒停下來','有停下來']);
     const c3 = ['var(--s2)','var(--s1)','var(--s4)'];
     const stories = allReflections.filter(r=>r.phase!=='前測' && (r.q7||'').trim()).sort((a,b)=>String(b.timestamp).localeCompare(String(a.timestamp)));
 
@@ -1536,9 +1537,9 @@
           '<p class="rfd-note">右邊的百分比＝過去一週 2 次以上的比例。</p></div>' +
       '</div>' +
       '<div class="rfd-grid">' +
-        '<div class="rfd-box"><h3>情緒上來時會怎麼做</h3><p class="rfd-note">每人最後一次後測，可複選，n = '+latest.length+'</p><div class="rfd-bars">' +
+        '<div class="rfd-box"><h3>情緒上來時會怎麼做</h3><p class="rfd-note">第 3 天的回答，可複選，n = '+day3.length+'</p><div class="rfd-bars">' +
           q5.map(([k,v])=>'<div class="rfd-bar"><span>'+esc(k)+'</span><div class="t"><span style="width:'+(v/q5max*100)+'%"></span></div><span class="n">'+v+'</span></div>').join('') + '</div></div>' +
-        '<div class="rfd-box"><h3>只在後測問的題目</h3><p class="rfd-note">每人最後一次後測，n = '+latest.length+'</p>' +
+        '<div class="rfd-box"><h3>只在第 3 天問的題目</h3><p class="rfd-note">第 3 天的回答，n = '+day3.length+'</p>' +
           '<div><div class="rfd-qt"><span>能更快說出自己是什麼情緒</span><span class="rfd-delta">比較容易 '+fmt(share(q3,2))+'</span></div><div style="margin-top:8px">'+stack(q3, c3)+'</div>'+legend(['比較難','差不多','比較容易'], c3)+'</div>' +
           '<div><div class="rfd-qt"><span>快發脾氣前先停下來</span><span class="rfd-delta">有停下來 '+fmt(share(q6,2))+'</span></div><div style="margin-top:8px">'+stack(q6, ['var(--s1)','var(--s2)','var(--s4)'])+'</div>'+legend(['沒有遇到','有遇到但沒停下來','有停下來'], ['var(--s1)','var(--s2)','var(--s4)'])+'</div>' +
         '</div>' +

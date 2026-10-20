@@ -2136,7 +2136,7 @@ var Recap = (function(){
   const INTRO = {
     '前測':'沒有標準答案，誠實回答就好。第 3 天和第 5 天會再問一次，看看有沒有不一樣。',
     '第3天':'你已經來了 3 天！跟第一次比起來，這幾天你的日常有沒有一點點改變？誠實回答就好。',
-    '第5天':'第 5 天了，謝謝你一路陪著自己。再回頭看看這幾天，有沒有什麼不一樣？'
+    '第5天':'第 5 天了，謝謝你一路陪著自己。最後 3 題，看看這幾天有沒有什麼不一樣？'
   };
   const EYEBROW = { '前測':'小回顧・第 1 次', '第3天':'小回顧・第 3 天', '第5天':'小回顧・第 5 天' };
   let phase = '';
@@ -2150,10 +2150,10 @@ var Recap = (function(){
     document.getElementById('rfIntro').textContent = INTRO[phase];
     document.getElementById('rfEyebrow').textContent = EYEBROW[phase];
     document.getElementById('err-reflect').classList.remove('show');
-    document.getElementById('rfTime').textContent = phase === '前測' ? '只要 30 秒' : '大約 1 分鐘';
+    document.getElementById('rfTime').textContent = phase === '第3天' ? '大約 1 分鐘' : '只要 30 秒';
     let n = 0;
     QUESTIONS.forEach(q=>{
-      if(q.postOnly && phase === '前測') return;
+      if(q.postOnly && phase !== '第3天') return;   // 第 1、5 天只問 3 題，第 3 天問 7 題
       n++;
       const box = el('div','rf-q'); box.dataset.q = q.id;
       const lab = el('div','rf-label', '<span class="rf-num">'+n+'.</span>'+q.label); lab.id = 'rf-lab-'+q.id;
@@ -2191,7 +2191,7 @@ var Recap = (function(){
 
   // 已回答幾題（選填題不算）
   function updateCount(){
-    const req = QUESTIONS.filter(q=>!q.optional && !(q.postOnly && phase === '前測'));
+    const req = QUESTIONS.filter(q=>!q.optional && !(q.postOnly && phase !== '第3天'));
     const done = req.filter(q=>{ const a = answers[q.id]; return a != null && !(Array.isArray(a) && !a.length); }).length;
     document.getElementById('rfCount').textContent = '已回答 ' + done + ' / ' + req.length;
   }
