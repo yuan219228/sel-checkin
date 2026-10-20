@@ -565,6 +565,10 @@
   .rf .rf-err{font-size:13px;color:var(--danger);}
   .rf textarea{width:100%;min-height:84px;border:1px solid var(--line);background:var(--cream);border-radius:var(--radius-sm);padding:10px 12px;font:15px "Noto Sans TC",sans-serif;color:var(--ink);resize:vertical;}
   .rf .error-msg{margin-top:16px;}
+  #feedbackField[hidden]{display:none !important;}
+  .rf .rf-quick{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:2px 0 14px;font-size:13px;color:var(--ink-soft);}
+  .rf .rf-quick b{color:var(--clay-dark);}
+  .rf .rf-count{font-variant-numeric:tabular-nums;background:var(--clay-tint);color:var(--clay-dark);border-radius:999px;padding:2px 10px;font-weight:700;}
   @media (max-width:400px){ .rf .rf-opts.scale{grid-template-columns:repeat(3,minmax(0,1fr));} .rf .rf-ends{display:none;} }
   @media (min-width:900px){ .rf .rf-q > .rf-label{font-size:16px;} .rf .rf-opts.scale .rf-opt{font-size:14.5px;padding:12px 4px;} }
 </style>
@@ -666,6 +670,7 @@
       <div class="step-label" id="rfEyebrow">小回顧</div>
       <h2>花一分鐘，回頭看看這一週</h2>
       <p class="hint" id="rfIntro"></p>
+      <div class="rf-quick"><span>點選就好，<b id="rfTime">只要 30 秒</b></span><span class="rf-count" id="rfCount" aria-live="polite">已回答 0 / 3</span></div>
       <div class="rf-sec" id="rfSecA">
         <div class="rf-head"><svg class="bun" aria-hidden="true"><use href="#bun-aware"/></svg><div>自我覺察<small>能不能發現自己的情緒和身體訊號</small></div></div>
       </div>
@@ -740,7 +745,7 @@
     <section class="step" data-step="4">
       <div class="step-label">04 / 06</div>
       <h2>換一個角度，會怎麼對自己說？</h2>
-      <p class="hint">如果是你在意的同事遇到這件事，你會對他說什麼？（鼓勵或安慰都可以）</p>
+      <p class="hint">如果是你在意的同事遇到這件事，你會對他說什麼？（鼓勵或安慰都可以；選填，想跳過也可以）</p>
       <div class="field">
         <textarea id="in-reframe" placeholder="例如：我現在很累，不代表我做得不夠好。／今天的順利值得記住，我也很棒。" oninput="document.getElementById('err-reframe').classList.remove('show')"></textarea>
       </div>
@@ -786,8 +791,8 @@
 
       <div class="field" style="margin-top:18px;"><label>做完呼吸後，跟剛才比，你現在的心情是？</label><div class="grid-2" id="change-grid" style="grid-template-columns:repeat(3,1fr);margin-top:8px;"><div class="chip" data-value="更好"><span class="emoji"><svg class="bun" aria-hidden="true"><use href="#bun-happy"/></svg></span>比剛才更好</div><div class="chip" data-value="差不多"><span class="emoji"><svg class="bun" aria-hidden="true"><use href="#bun-calm"/></svg></span>差不多</div><div class="chip" data-value="沒那麼好"><span class="emoji"><svg class="bun" aria-hidden="true"><use href="#bun-sad"/></svg></span>沒那麼好</div></div><div class="error-msg" id="err-change">請選擇一個最接近的答案。</div></div>
 
-      <div class="field" style="margin-top:18px;">
-        <label for="in-feedback">如果可以，你希望單位或醫院提供什麼支持？</label>
+      <div class="field" id="feedbackField" style="margin-top:18px;" hidden>
+        <label for="in-feedback">如果可以，你希望單位或醫院提供什麼支持？（選填）</label>
         <textarea id="in-feedback" oninput="document.getElementById('err-feedback').classList.remove('show')"></textarea>
         <div class="error-msg" id="err-feedback">請寫一句話再送出，不用很長，一句話就好。</div>
       </div>
@@ -1059,10 +1064,7 @@
       state.stressorOther = document.getElementById('stressor-other').value.trim();
     }
     if(fromStep === 4){
-      const reframe = document.getElementById('in-reframe').value.trim();
-      document.getElementById('err-reframe').classList.toggle('show', !reframe);
-      if(!reframe) return;
-      state.reframe = reframe;
+      state.reframe = document.getElementById('in-reframe').value.trim();   // 選填
     }
     if(fromStep === 5){
       document.getElementById('intensityAfter').value = state.intensityBefore;
@@ -1161,9 +1163,6 @@
 
   function submitForm(){
     if(!state.moodChange){ document.getElementById('err-change').classList.add('show'); document.getElementById('err-change').scrollIntoView({behavior:'smooth',block:'center'}); return; }
-    const feedbackVal = document.getElementById('in-feedback').value.trim();
-    if(!feedbackVal){ document.getElementById('err-feedback').classList.add('show'); document.getElementById('in-feedback').scrollIntoView({behavior:'smooth',block:'center'}); return; }
-    document.getElementById('err-feedback').classList.remove('show');
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.textContent = '送出中…';
@@ -2127,15 +2126,15 @@ var Recap = (function(){
     { id:'q3', sec:'A', type:'single', opts:['比較難','差不多','比較容易'], postOnly:true,
       label:'比起剛開始參加活動，你現在能不能更快說出自己是什麼情緒？', note:'例如分辨出是「焦慮」，不只是「不舒服」' },
     { id:'q4', sec:'B', type:'single', opts:['沒有','1 次','2–3 次','4 次以上'], label:'過去一週，你有沒有主動用深呼吸或其他方法讓自己緩一下？' },
-    { id:'q5', sec:'B', type:'multi', opts:['深呼吸','暫時離開現場','跟同事或朋友聊聊','寫下來','轉移注意力','先忍著','其他'],
+    { id:'q5', sec:'B', type:'multi', opts:['深呼吸','暫時離開現場','跟同事或朋友聊聊','寫下來','轉移注意力','先忍著','其他'], postOnly:true,
       label:'情緒上來的時候，你通常會怎麼做？', note:'可以複選' },
-    { id:'q6', sec:'B', type:'single', opts:['沒有遇到這種情況','有遇到，但沒停下來','有停下來'],
+    { id:'q6', sec:'B', type:'single', opts:['沒有遇到這種情況','有遇到，但沒停下來','有停下來'], postOnly:true,
       label:'過去一週，你有沒有在快要發脾氣或說出後悔的話之前，先停下來過？' },
     { id:'q7', sec:'B', type:'text', postOnly:true, optional:true,
       label:'能不能分享一次，你在工作中察覺到自己的情緒，並做了一些調整的經驗？', note:'選填，一兩句就好' }
   ];
   const INTRO = {
-    '前測':'沒有標準答案，誠實回答就好。第 3 天和第 5 天會再問一次，看看參加活動之後有沒有不一樣。',
+    '前測':'沒有標準答案，誠實回答就好。第 3 天和第 5 天會再問一次，看看有沒有不一樣。',
     '第3天':'你已經來了 3 天！跟第一次比起來，這幾天你的日常有沒有一點點改變？誠實回答就好。',
     '第5天':'第 5 天了，謝謝你一路陪著自己。再回頭看看這幾天，有沒有什麼不一樣？'
   };
@@ -2151,6 +2150,7 @@ var Recap = (function(){
     document.getElementById('rfIntro').textContent = INTRO[phase];
     document.getElementById('rfEyebrow').textContent = EYEBROW[phase];
     document.getElementById('err-reflect').classList.remove('show');
+    document.getElementById('rfTime').textContent = phase === '前測' ? '只要 30 秒' : '大約 1 分鐘';
     let n = 0;
     QUESTIONS.forEach(q=>{
       if(q.postOnly && phase === '前測') return;
@@ -2177,6 +2177,7 @@ var Recap = (function(){
               answers[q.id] = o;
             }
             const err = box.querySelector('.rf-err'); if(err) err.remove();
+            updateCount();
           });
           wrap.appendChild(b);
         });
@@ -2185,6 +2186,14 @@ var Recap = (function(){
       }
       document.getElementById(q.sec === 'A' ? 'rfSecA' : 'rfSecB').appendChild(box);
     });
+    updateCount();
+  }
+
+  // 已回答幾題（選填題不算）
+  function updateCount(){
+    const req = QUESTIONS.filter(q=>!q.optional && !(q.postOnly && phase === '前測'));
+    const done = req.filter(q=>{ const a = answers[q.id]; return a != null && !(Array.isArray(a) && !a.length); }).length;
+    document.getElementById('rfCount').textContent = '已回答 ' + done + ' / ' + req.length;
   }
 
   const api = {
@@ -2202,6 +2211,7 @@ var Recap = (function(){
         api.checkedFor = staffId;
         phase = INTRO[p] ? p : '';
         state.reflection = null;
+        document.getElementById('feedbackField').hidden = !phase;   // 第 1、3、5 天才問
         if(phase){ render(); currentStep = 1; showStep('reflect'); }
         else { currentStep = 2; showStep(2); }
       };
