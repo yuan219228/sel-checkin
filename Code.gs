@@ -22,7 +22,8 @@
  * 部署時「誰可以存取」必須選「所有人」。
  *
  * 資料保護：
- * - 對外（doPost）只開放「送出打卡」和「查自己的累積天數」，讀不到任何人的資料。
+ * - 對外（doPost）只開放「送出打卡」、「查自己的累積天數」和「今天要不要問小回顧」，
+ *   讀不到任何人的資料。
  * - 後台（getData、切換領取狀態）只有 ADMIN_EMAILS 裡的帳號、
  *   從 Apps Script 網址（.../exec?page=admin）登入 Google 開啟時才能用。
  */
@@ -40,6 +41,21 @@ var SUBMIT_HEADERS = ['timestamp','name','unit','title','staffId','email',
   'intensityAfter','delta','moodChange','valence','feedback'];
 
 var GIFT_HEADERS = ['staffId','name','unit','status','notebookStatus','updatedAt'];
+
+// 日常運用小回顧：第 1 天前測、第 3 天後測、第 5 天再測（每個階段每人只問一次）
+var SHEET_REFLECT = '日常運用';
+var REFLECT_HEADERS = ['timestamp','staffId','name','unit','title','phase',
+  'q1_察覺情緒','q2_身體訊號','q3_說出情緒','q4_主動調節','q5_因應方式','q6_先停下來','q7_經驗分享'];
+var REFLECT_PHASES = ['前測','第3天','第5天'];
+// 只收這些選項，避免亂填的資料混進統計
+var REFLECT_OPTIONS = {
+  q1: ['從來沒有','偶爾','一半一半','常常','幾乎每次'],
+  q2: ['從來沒有','偶爾','一半一半','常常','幾乎每次'],
+  q3: ['比較難','差不多','比較容易'],
+  q4: ['沒有','1 次','2–3 次','4 次以上'],
+  q5: ['深呼吸','暫時離開現場','跟同事或朋友聊聊','寫下來','轉移注意力','先忍著','其他'],
+  q6: ['沒有遇到這種情況','有遇到，但沒停下來','有停下來']
+};
 
 // ---------------- 網頁路由 ----------------
 function doGet(e){
@@ -59,7 +75,8 @@ function doGet(e){
 // 這裡只放「不會洩漏別人資料」的函式，千萬不要把 getData 加進來
 var PUBLIC_FUNCTIONS = {
   submitCheckin: submitCheckin,
-  getProgress: getProgress
+  getProgress: getProgress,
+  getReflectionPhase: getReflectionPhase
 };
 
 function doPost(e){
@@ -114,8 +131,50 @@ function submitCheckinLocked_(data){
   ].map(safeCell_);
   shS.appendRow(row);
   ensureGiftRow_(staffId, data.name, data.unit);
+  if(data.reflection) saveReflection_(staffId, data, data.reflection);
   SpreadsheetApp.flush();
   return {ok:true};
+}
+
+// 打卡頁查詢用：今天要不要先問「小回顧」，要的話是哪一個階段
+// 只回傳階段名稱，不會透露任何人的回答
+function getReflectionPhase(staffId){
+  staffId = normId_(staffId);
+  if(!staffId) return {phase:''};
+  var today = dateOnly_(new Date());
+  var days = {};
+  sheetToObjects_(getSheet_(SHEET_SUBMIT, SUBMIT_HEADERS)).forEach(function(r){
+    if(normId_(r.staffId) !== staffId) return;
+    var d = dateOnly_(r.timestamp);
+    if(d && d !== today) days[d] = true;
+  });
+  var before = Object.keys(days).length;   // 今天以前打過幾天
+  var done = reflectionPhasesOf_(staffId);
+  if(!done['前測'] && before < 2) return {phase:'前測'};               // 第 1 天（剛上線時第 2 天的人也補一次）
+  if(!done['第3天'] && before >= 2 && before < 4) return {phase:'第3天'};
+  if(!done['第5天'] && before >= 4) return {phase:'第5天'};
+  return {phase:''};
+}
+
+function reflectionPhasesOf_(staffId){
+  var done = {};
+  sheetToObjects_(getSheet_(SHEET_REFLECT, REFLECT_HEADERS)).forEach(function(r){
+    if(normId_(r.staffId) === staffId) done[r.phase] = true;
+  });
+  return done;
+}
+
+function saveReflection_(staffId, data, rf){
+  if(!staffId || REFLECT_PHASES.indexOf(rf.phase) === -1) return;
+  if(reflectionPhasesOf_(staffId)[rf.phase]) return;          // 同一階段已經回答過
+  var pick = function(key){ var v = rf[key]; return REFLECT_OPTIONS[key].indexOf(v) >= 0 ? v : ''; };
+  var methods = (Array.isArray(rf.q5) ? rf.q5 : []).filter(function(v){ return REFLECT_OPTIONS.q5.indexOf(v) >= 0; });
+  var post = rf.phase !== '前測';
+  getSheet_(SHEET_REFLECT, REFLECT_HEADERS).appendRow([
+    new Date().toISOString(), staffId, data.name || '', data.unit || '', data.title || '', rf.phase,
+    pick('q1'), pick('q2'), post ? pick('q3') : '', pick('q4'), methods.join('、'), pick('q6'),
+    post ? String(rf.q7 || '').slice(0, 1000) : ''
+  ].map(safeCell_));
 }
 
 // 打卡頁查詢用：只回傳這個員工編號累積打卡的天數
@@ -148,7 +207,13 @@ function getData(){
     return { staffId:normId_(r.staffId), name:r.name, unit:r.unit, status:r.notebookStatus, updatedAt:r.updatedAt };
   });
 
-  return { submissions:submissions, giftStatus:giftStatus, dailyCheckins:dailyCheckins, notebookStatus:notebookStatus };
+  var reflections = sheetToObjects_(getSheet_(SHEET_REFLECT, REFLECT_HEADERS)).map(function(r){
+    return { timestamp:r.timestamp, staffId:normId_(r.staffId), name:r.name, unit:r.unit, phase:r.phase,
+      q1:r['q1_察覺情緒'], q2:r['q2_身體訊號'], q3:r['q3_說出情緒'], q4:r['q4_主動調節'],
+      q5:r['q5_因應方式'], q6:r['q6_先停下來'], q7:r['q7_經驗分享'] };
+  });
+
+  return { submissions:submissions, giftStatus:giftStatus, dailyCheckins:dailyCheckins, notebookStatus:notebookStatus, reflections:reflections };
 }
 
 // 後台：切換「筆」的領取狀態
