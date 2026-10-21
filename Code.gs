@@ -38,23 +38,38 @@ var SHEET_GIFT    = '禮物狀態';
 
 var SUBMIT_HEADERS = ['timestamp','name','unit','title','staffId','email',
   'moodBefore','intensityBefore','bodySignals','stressors','reframe',
-  'intensityAfter','delta','moodChange','valence','feedback'];
+  'intensityAfter','delta','moodChange','valence','feedback','challenge','challengeAnswer'];
+
+// 今日 SEL 小挑戰：累積第 1～5 天各一題情境題（之後輪流），只收 D1–D5、A–D
+var CHALLENGE_IDS = ['D1','D2','D3','D4','D5'];
+var CHALLENGE_ANSWERS = ['A','B','C','D'];
 
 var GIFT_HEADERS = ['staffId','name','unit','status','notebookStatus','updatedAt'];
 
 // 日常運用小回顧：第 1 天前測、第 3 天後測、第 5 天再測（每個階段每人只問一次）
 var SHEET_REFLECT = '日常運用';
 var REFLECT_HEADERS = ['timestamp','staffId','name','unit','title','phase',
-  'q1_察覺情緒','q2_身體訊號','q3_說出情緒','q4_主動調節','q5_因應方式','q6_先停下來','q7_經驗分享'];
+  'q1_察覺情緒','q2_身體訊號','q3_說出情緒','q4_主動調節','q5_因應方式','q6_先停下來','q7_經驗分享',
+  'q8_問同事還好嗎','q9_注意同事情緒','q10_跨職類道謝','q11_先聽完再回應','q13_冷靜評估','q12_決策步驟'];
 var REFLECT_PHASES = ['前測','第3天','第5天'];
+var FREQ4 = ['0 次','1–2 次','3–5 次','6 次以上'];
+var SCALE5 = ['從來沒有','偶爾','一半一半','常常','幾乎每次'];
+// 每題在哪些階段問（沒列的三個階段都問）
+var REFLECT_ASKED = {
+  q3: ['第3天'], q5: ['第3天'], q6: ['第3天'], q7: ['第3天'],
+  q8: ['前測','第5天'], q9: ['前測','第5天'], q10: ['前測','第5天'], q11: ['前測','第5天'], q13: ['前測','第5天'],
+  q12: ['第5天']
+};
 // 只收這些選項，避免亂填的資料混進統計
 var REFLECT_OPTIONS = {
-  q1: ['從來沒有','偶爾','一半一半','常常','幾乎每次'],
-  q2: ['從來沒有','偶爾','一半一半','常常','幾乎每次'],
+  q1: SCALE5,
+  q2: SCALE5,
   q3: ['比較難','差不多','比較容易'],
   q4: ['沒有','1 次','2–3 次','4 次以上'],
   q5: ['深呼吸','暫時離開現場','跟同事或朋友聊聊','寫下來','轉移注意力','先忍著','其他'],
-  q6: ['沒有遇到這種情況','有遇到，但沒停下來','有停下來']
+  q6: ['沒有遇到這種情況','有遇到，但沒停下來','有停下來'],
+  q8: FREQ4, q9: FREQ4, q10: FREQ4, q11: SCALE5, q13: SCALE5,
+  q12: ['先蒐集更多資訊','請教同事或主管','考慮病人或家屬的意願','確認規範或流程','想過可能的後果','事後反思結果','以上都沒有，當下就決定了']
 };
 
 // ---------------- 網頁路由 ----------------
@@ -110,37 +125,39 @@ function submitCheckin(data){
 
 function submitCheckinLocked_(data){
   var staffId = normId_(data.staffId);
-  var shS = getSheet_(SHEET_SUBMIT, SUBMIT_HEADERS);
-  var row = [
-    new Date().toISOString(),
-    data.name || '',
-    data.unit || '',
-    data.title || '',
-    staffId,
-    data.email || '',
-    data.moodBefore || '',
-    data.intensityBefore || '',
-    joinIfArray_(data.bodySignals),
-    joinIfArray_(data.stressors),
-    data.reframe || '',
-    data.intensityAfter || '',
-    data.delta || '',
-    data.moodChange || '',
-    data.valence || '',
-    data.feedback || ''
-  ].map(safeCell_);
-  shS.appendRow(row);
+  var ch = data.challenge || {};
+  var chOk = CHALLENGE_IDS.indexOf(ch.id) >= 0 && CHALLENGE_ANSWERS.indexOf(ch.answer) >= 0;
+  appendByHeaders_(getSheet_(SHEET_SUBMIT, SUBMIT_HEADERS), SUBMIT_HEADERS, {
+    timestamp: new Date().toISOString(),
+    name: data.name || '',
+    unit: data.unit || '',
+    title: data.title || '',
+    staffId: staffId,
+    email: data.email || '',
+    moodBefore: data.moodBefore || '',
+    intensityBefore: data.intensityBefore || '',
+    bodySignals: joinIfArray_(data.bodySignals),
+    stressors: joinIfArray_(data.stressors),
+    reframe: data.reframe || '',
+    intensityAfter: data.intensityAfter || '',
+    delta: data.delta || '',
+    moodChange: data.moodChange || '',
+    valence: data.valence || '',
+    feedback: data.feedback || '',
+    challenge: chOk ? ch.id : '',
+    challengeAnswer: chOk ? ch.answer : ''
+  });
   ensureGiftRow_(staffId, data.name, data.unit);
   if(data.reflection) saveReflection_(staffId, data, data.reflection);
   SpreadsheetApp.flush();
   return {ok:true};
 }
 
-// 打卡頁查詢用：今天要不要先問「小回顧」，要的話是哪一個階段
-// 只回傳階段名稱，不會透露任何人的回答
+// 打卡頁查詢用：今天要不要先問「小回顧」（哪一個階段），以及今天是累積第幾天
+// 只回傳階段名稱和天數，不會透露任何人的回答
 function getReflectionPhase(staffId){
   staffId = normId_(staffId);
-  if(!staffId) return {phase:''};
+  if(!staffId) return {phase:'', day:0};
   var today = dateOnly_(new Date());
   var days = {};
   sheetToObjects_(getSheet_(SHEET_SUBMIT, SUBMIT_HEADERS)).forEach(function(r){
@@ -149,11 +166,12 @@ function getReflectionPhase(staffId){
     if(d && d !== today) days[d] = true;
   });
   var before = Object.keys(days).length;   // 今天以前打過幾天
+  var day = before + 1;                    // 今天是累積第幾天（決定今日 SEL 小挑戰）
   var done = reflectionPhasesOf_(staffId);
-  if(!done['前測'] && before < 2) return {phase:'前測'};               // 第 1 天（剛上線時第 2 天的人也補一次）
-  if(!done['第3天'] && before >= 2 && before < 4) return {phase:'第3天'};
-  if(!done['第5天'] && before >= 4) return {phase:'第5天'};
-  return {phase:''};
+  if(!done['前測'] && before < 2) return {phase:'前測', day:day};      // 第 1 天（剛上線時第 2 天的人也補一次）
+  if(!done['第3天'] && before >= 2 && before < 4) return {phase:'第3天', day:day};
+  if(!done['第5天'] && before >= 4) return {phase:'第5天', day:day};
+  return {phase:'', day:day};
 }
 
 function reflectionPhasesOf_(staffId){
@@ -167,14 +185,21 @@ function reflectionPhasesOf_(staffId){
 function saveReflection_(staffId, data, rf){
   if(!staffId || REFLECT_PHASES.indexOf(rf.phase) === -1) return;
   if(reflectionPhasesOf_(staffId)[rf.phase]) return;          // 同一階段已經回答過
-  var pick = function(key){ var v = rf[key]; return REFLECT_OPTIONS[key].indexOf(v) >= 0 ? v : ''; };
-  var methods = (Array.isArray(rf.q5) ? rf.q5 : []).filter(function(v){ return REFLECT_OPTIONS.q5.indexOf(v) >= 0; });
-  var post = rf.phase !== '前測';
-  getSheet_(SHEET_REFLECT, REFLECT_HEADERS).appendRow([
-    new Date().toISOString(), staffId, data.name || '', data.unit || '', data.title || '', rf.phase,
-    pick('q1'), pick('q2'), post ? pick('q3') : '', pick('q4'), methods.join('、'), pick('q6'),
-    post ? String(rf.q7 || '').slice(0, 1000) : ''
-  ].map(safeCell_));
+  var asked = function(key){ var ph = REFLECT_ASKED[key]; return !ph || ph.indexOf(rf.phase) >= 0; };
+  var pick = function(key){ var v = rf[key]; return asked(key) && REFLECT_OPTIONS[key].indexOf(v) >= 0 ? v : ''; };
+  var multi = function(key){
+    if(!asked(key)) return '';
+    return (Array.isArray(rf[key]) ? rf[key] : []).filter(function(v){ return REFLECT_OPTIONS[key].indexOf(v) >= 0; }).join('、');
+  };
+  appendByHeaders_(getSheet_(SHEET_REFLECT, REFLECT_HEADERS), REFLECT_HEADERS, {
+    'timestamp': new Date().toISOString(), 'staffId': staffId, 'name': data.name || '', 'unit': data.unit || '',
+    'title': data.title || '', 'phase': rf.phase,
+    'q1_察覺情緒': pick('q1'), 'q2_身體訊號': pick('q2'), 'q3_說出情緒': pick('q3'), 'q4_主動調節': pick('q4'),
+    'q5_因應方式': multi('q5'), 'q6_先停下來': pick('q6'),
+    'q7_經驗分享': asked('q7') ? String(rf.q7 || '').slice(0, 1000) : '',
+    'q8_問同事還好嗎': pick('q8'), 'q9_注意同事情緒': pick('q9'), 'q10_跨職類道謝': pick('q10'),
+    'q11_先聽完再回應': pick('q11'), 'q13_冷靜評估': pick('q13'), 'q12_決策步驟': multi('q12')
+  });
 }
 
 // 打卡頁查詢用：只回傳這個員工編號累積打卡的天數
@@ -210,7 +235,9 @@ function getData(){
   var reflections = sheetToObjects_(getSheet_(SHEET_REFLECT, REFLECT_HEADERS)).map(function(r){
     return { timestamp:r.timestamp, staffId:normId_(r.staffId), name:r.name, unit:r.unit, phase:r.phase,
       q1:r['q1_察覺情緒'], q2:r['q2_身體訊號'], q3:r['q3_說出情緒'], q4:r['q4_主動調節'],
-      q5:r['q5_因應方式'], q6:r['q6_先停下來'], q7:r['q7_經驗分享'] };
+      q5:r['q5_因應方式'], q6:r['q6_先停下來'], q7:r['q7_經驗分享'],
+      q8:r['q8_問同事還好嗎'], q9:r['q9_注意同事情緒'], q10:r['q10_跨職類道謝'], q11:r['q11_先聽完再回應'],
+      q13:r['q13_冷靜評估'], q12:r['q12_決策步驟'] };
   });
 
   return { submissions:submissions, giftStatus:giftStatus, dailyCheckins:dailyCheckins, notebookStatus:notebookStatus, reflections:reflections };
@@ -282,6 +309,16 @@ function getSheet_(name, headers){
     sh.setFrozenRows(1);
   }
   return sh;
+}
+
+// 依「欄位名稱」寫入一列：工作表缺的欄位會自動加在最右邊，舊資料的欄位位置不受影響
+function appendByHeaders_(sh, headers, obj){
+  var lastCol = Math.max(1, sh.getLastColumn());
+  var head = sh.getRange(1, 1, 1, lastCol).getValues()[0].map(function(h){ return String(h); });
+  headers.forEach(function(h){
+    if(head.indexOf(h) === -1){ head.push(h); sh.getRange(1, head.length).setValue(h); }
+  });
+  sh.appendRow(head.map(function(h){ return safeCell_(obj.hasOwnProperty(h) ? obj[h] : ''); }));
 }
 
 function sheetToObjects_(sh){

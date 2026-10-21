@@ -298,6 +298,7 @@
     <a href="#panel-moodeffect">各感受成效</a>
     <a href="#panel-month">月度變化</a>
     <a href="#panel-reflect">日常運用</a>
+    <a href="#panel-sel5">SEL 五大能力</a>
     <a href="#panel-feedback">開放留言</a>
   </nav>
 
@@ -504,8 +505,14 @@
 
   <div class="panel" id="panel-reflect">
     <h2>日常運用：前後對照</h2>
-    <p class="sub">小回顧的結果：第 1 天前測 3 題、第 3 天後測 7 題、第 5 天再測 3 題。前後對照只計算「有做前測」的人；因應方式、先停下來、經驗分享只在第 3 天問。不受上方篩選影響。</p>
+    <p class="sub">小回顧中「自我覺察」與「自我管理」的結果：第 1 天前測、第 3 天後測、第 5 天再測。前後對照只計算「有做前測」的人；因應方式、先停下來、經驗分享只在第 3 天問。社會覺察、人際技巧、負責任的決策請見下一個分頁。不受上方篩選影響。</p>
     <div id="reflectWrap"><div class="empty">尚未載入資料。</div></div>
+  </div>
+
+  <div class="panel" id="panel-sel5">
+    <h2>SEL 五大能力</h2>
+    <p class="sub">社會覺察、人際技巧、負責任的決策的前後對照（第 1 天 → 第 5 天，第 5 天只計算有做前測的人）、第 5 天的決策步驟，以及每天「今日 SEL 小挑戰」的選擇分布。不受上方篩選影響。</p>
+    <div id="sel5Wrap"><div class="empty">尚未載入資料。</div></div>
   </div>
 
   <div class="panel" id="panel-feedback">
@@ -670,6 +677,10 @@
       }
     });
 
+    // 示範：每人依打卡順序輪到 D1～D5，多半選較成熟的回應
+    const seenBy = {};
+    demo.forEach(d=>{ const k = seenBy[d.staffId] = (seenBy[d.staffId] || 0) + 1; d.challenge = 'D' + (((k - 1) % 5) + 1);
+      const w = [1, 2, 9, 4]; let r = Math.random() * 16; d.challengeAnswer = 'ABCD'.charAt(r < w[0] ? 0 : r < w[0]+w[1] ? 1 : r < w[0]+w[1]+w[2] ? 2 : 3); });
     allSubmissions = demo;
     allReflections = demoReflections(demo, demoDaily);
     dailyRecords = demoDaily;
@@ -688,6 +699,7 @@
     statusEl.classList.remove('err');
     statusEl.textContent = '目前顯示「示範資料」共 ' + demo.length + ' 筆（' + Object.keys(demoStatus).length + ' 人・示範每日打卡 ' + demoDaily.length + ' 筆），僅供預覽版面；按「重新整理資料」即可切換回正式資料。';
     renderReflect();
+    renderSel5();
     applyFilters();
   }
 
@@ -730,6 +742,7 @@
         statusEl.textContent = '已載入，共 ' + subs.length + ' 筆（' + new Date().toLocaleTimeString('zh-TW') + '）';
         try{
           renderReflect();
+          renderSel5();
           applyFilters();
         }catch(e){
           console.error(e);
@@ -1477,6 +1490,12 @@
           q4: pickW(RF_Q4, [20-lift*7,13-lift*2,10+lift*3,5+lift*3]),
           q5: ph!=='第3天' ? '' : (RF_Q5.filter((m,i)=>Math.random() < [0.55,0.2,0.3,0.12,0.35,0.3,0.03][i]).join('、') || '深呼吸'),
           q6: ph!=='第3天' ? '' : pickW(['沒有遇到這種情況','有遇到，但沒停下來','有停下來'],[4,2,5]),
+          q8: ph==='第3天' ? '' : pickW(SEL_FREQ4, [6-lift,14,8+lift,3+lift]),
+          q9: ph==='第3天' ? '' : pickW(SEL_FREQ4, [8-lift,14,7+lift,2+lift]),
+          q10: ph==='第3天' ? '' : pickW(SEL_FREQ4, [10-lift*2,14,6+lift,2+lift]),
+          q11: ph==='第3天' ? '' : pickW(RF_SCALE5, [2,6-lift,12,10+lift,4+lift]),
+          q13: ph==='第3天' ? '' : pickW(RF_SCALE5, [2,7-lift,12,9+lift,4+lift]),
+          q12: ph!=='第5天' ? '' : (SEL_STEPS.slice(0,6).filter((m,i)=>Math.random() < [0.6,0.55,0.4,0.5,0.45,0.3][i]).join('、') || '以上都沒有，當下就決定了'),
           q7: ph==='第3天' && Math.random()<0.3 ? ['開會前發現肩膀很緊，先做了三次深呼吸才進去。','家屬大聲時先察覺到自己也在生氣，就先離開一下再回來。','下班前會想一下今天是什麼情緒，比較不會帶回家。'][Math.floor(Math.random()*3)] : '' });
       });
     });
@@ -1546,6 +1565,98 @@
       '</div>' +
       '<div class="rfd-box"><h3>經驗分享（'+stories.length+' 則）</h3>' +
         (stories.length ? '<ul class="rfd-quotes">'+stories.map(r=>'<li>'+esc(r.q7)+'<span>'+esc([r.name, r.unit, r.phase].filter(Boolean).join('・'))+'</span></li>').join('')+'</ul>' : '<div class="empty">還沒有人分享。</div>') +
+      '</div>' +
+    '</div>';
+  }
+
+  // ---------------- SEL 五大能力 ----------------
+  const SEL_FREQ4 = ['0 次','1–2 次','3–5 次','6 次以上'];
+  const SEL_STEPS = ['先蒐集更多資訊','請教同事或主管','考慮病人或家屬的意願','確認規範或流程','想過可能的後果','事後反思結果','以上都沒有，當下就決定了'];
+  const SEL_CHALLENGES = [
+    { id:'D1', skill:'自我覺察', title:'情緒覺察', mature:['C','D'] },
+    { id:'D2', skill:'自我管理', title:'情緒調適', mature:['C'] },
+    { id:'D3', skill:'社會覺察', title:'同理心', mature:['C'] },
+    { id:'D4', skill:'人際技巧', title:'溝通與衝突處理', mature:['C'] },
+    { id:'D5', skill:'負責任的決策', title:'理性判斷', mature:['C','D'] }
+  ];
+  function renderSel5(){
+    const wrap = document.getElementById('sel5Wrap');
+    const pre = {}, d5 = {};
+    allReflections.forEach(r=>{
+      const m = r.phase==='前測' ? pre : r.phase==='第5天' ? d5 : null;
+      if(m && r.staffId && !m[r.staffId]) m[r.staffId] = r;
+    });
+    // 今日小挑戰：每人每題取第一次的回答
+    const firstAns = {};
+    allSubmissions.slice().sort((a,b)=>String(a.timestamp).localeCompare(String(b.timestamp))).forEach(d=>{
+      const id = (d.challenge||'').trim(), a = (d.challengeAnswer||'').trim();
+      if(!id || !a || !d.staffId) return;
+      const k = d.staffId + '|' + id;
+      if(!firstAns[k]) firstAns[k] = { id, a };
+    });
+    const answers = Object.values(firstAns);
+    const has = (r, k)=> r && String(r[k]||'').trim();
+    const anyNew = Object.values(pre).some(r=>has(r,'q8')) || Object.values(d5).some(r=>has(r,'q8'));
+    if(!anyNew && !answers.length){
+      wrap.innerHTML = '<div class="empty">還沒有資料。新題目上線後，同仁打卡時就會開始累積。</div>';
+      return;
+    }
+    const dist = (list, key, opts)=> opts.map(o=>list.filter(r=>String(r[key]||'').trim()===o).length);
+    const share = (arr, from)=>{ const t = arr.reduce((a,b)=>a+b,0); return t ? Math.round(arr.slice(from).reduce((a,b)=>a+b,0)/t*100) : null; };
+    const fmt = v => v==null ? '–' : v+'%';
+    const stack = (arr, colors, labels)=>{ const t = arr.reduce((a,b)=>a+b,0) || 1;
+      return '<div class="rfd-stack">'+arr.map((v,i)=>'<span style="width:'+(v/t*100).toFixed(1)+'%;background:'+colors[i]+'" title="'+esc((labels ? labels[i] + '：' : '') + v + ' 人')+'"></span>').join('')+'</div>'; };
+    const legend = (labels, colors)=>'<div class="rfd-legend">'+labels.map((l,i)=>'<span><i style="background:'+colors[i]+'"></i>'+esc(l)+'</span>').join('')+'</div>';
+    const ITEMS = [
+      { key:'q8', skill:'社會覺察', title:'主動問同事「你還好嗎？」', opts:SEL_FREQ4, colors:RF_SC4, from:2, hi:'3 次以上' },
+      { key:'q9', skill:'社會覺察', title:'注意到同事情緒和平常不一樣', opts:SEL_FREQ4, colors:RF_SC4, from:2, hi:'3 次以上' },
+      { key:'q10', skill:'人際技巧', title:'主動向其他職類同仁道謝或肯定', opts:SEL_FREQ4, colors:RF_SC4, from:2, hi:'3 次以上' },
+      { key:'q11', skill:'人際技巧', title:'意見不同時，先聽完再回應', opts:RF_SCALE5, colors:RF_SC, from:3, hi:'常常以上' },
+      { key:'q13', skill:'負責任的決策', title:'困難決定時，冷靜評估後再行動', opts:RF_SCALE5, colors:RF_SC, from:3, hi:'常常以上' }
+    ];
+    function block(it){
+      const preL = Object.values(pre).filter(r=>has(r, it.key));
+      const postL = Object.keys(d5).filter(id=>has(pre[id], it.key) && has(d5[id], it.key)).map(id=>d5[id]);
+      const rows = [['前測', preL], ['第 5 天', postL]].filter(r=>r[1].length);
+      if(!rows.length) return '<div><div class="rfd-qt"><span>'+esc(it.title)+'</span></div><div class="empty">還沒有人回答。</div></div>';
+      const dd = rows.map(([w, l])=>[w, l.length, dist(l, it.key, it.opts)]);
+      const first = share(dd[0][2], it.from), last = dd.length > 1 ? share(dd[1][2], it.from) : null;
+      const delta = (first!=null && last!=null) ? last - first : null;
+      return '<div><div class="rfd-qt"><span>'+esc(it.title)+'</span>' +
+        (delta!=null ? '<span class="rfd-delta'+(delta<0?' neg':'')+'">第 5 天比前測 '+it.hi+' '+(delta>=0?'+':'')+delta+' 個百分點</span>' : '') + '</div>' +
+        '<div class="rfd-pair">' + dd.map(([w,n,arr])=>'<div class="who">'+w+'（'+n+'）</div>'+stack(arr, it.colors, it.opts)+'<div class="pct">'+fmt(share(arr, it.from))+'</div>').join('') + '</div></div>';
+    }
+    const box = (skill, items, note)=> '<div class="rfd-box"><h3>'+skill+'</h3>' + legend(items[0].opts, items[0].colors) + items.map(block).join('') + (note ? '<p class="rfd-note">'+note+'</p>' : '') + '</div>';
+    const steps = Object.values(d5).filter(r=>has(r,'q12'));
+    const stepCounts = SEL_STEPS.map(m=>[m, steps.filter(r=>String(r.q12).split('、').indexOf(m) >= 0).length]);
+    const stepMax = Math.max(1, ...stepCounts.map(x=>x[1]));
+    const LETTERS = ['A','B','C','D'];
+    const chColors = ['var(--s1)','var(--s2)','var(--s4)','var(--s5)'];
+    const chRows = SEL_CHALLENGES.map(c=>{
+      const list = answers.filter(x=>x.id===c.id);
+      const arr = LETTERS.map(L=>list.filter(x=>x.a===L).length);
+      const mature = list.length ? Math.round(list.filter(x=>c.mature.indexOf(x.a) >= 0).length / list.length * 100) : null;
+      return '<div class="who">'+c.id+' '+esc(c.skill)+'（'+list.length+'）</div>' + (list.length ? stack(arr, chColors, LETTERS) : '<div class="rfd-stack"></div>') + '<div class="pct">'+fmt(mature)+'</div>';
+    }).join('');
+    wrap.innerHTML = '<div class="rfd">' +
+      '<div class="rfd-kpis">' +
+        '<div class="rfd-kpi"><div class="v">'+Object.values(pre).filter(r=>has(r,'q8')).length+'<small>人</small></div><div class="k">做了新題目的前測</div></div>' +
+        '<div class="rfd-kpi"><div class="v">'+Object.keys(d5).filter(id=>has(pre[id],'q8') && has(d5[id],'q8')).length+'<small>人</small></div><div class="k">第 5 天再測，可以對照</div></div>' +
+        '<div class="rfd-kpi"><div class="v">'+answers.length+'<small>次</small></div><div class="k">今日 SEL 小挑戰作答</div></div>' +
+      '</div>' +
+      '<div class="rfd-grid">' +
+        box('社會覺察', ITEMS.slice(0,2), '右邊的百分比＝過去一週 3 次以上的比例；括號內是人數。') +
+        '<div class="rfd-box"><h3>人際技巧</h3>' + legend(SEL_FREQ4, RF_SC4) + block(ITEMS[2]) + legend(RF_SCALE5, RF_SC) + block(ITEMS[3]) +
+          '<p class="rfd-note">道謝或肯定：右邊是 3 次以上的比例；先聽完再回應：右邊是「常常」以上的比例。</p></div>' +
+      '</div>' +
+      '<div class="rfd-grid">' +
+        box('負責任的決策', [ITEMS[4]], '右邊的百分比＝回答「常常」或「幾乎每次」的比例。') +
+        '<div class="rfd-box"><h3>困難決定時做了哪些事</h3><p class="rfd-note">第 5 天的回答，可複選，n = '+steps.length+'</p><div class="rfd-bars">' +
+          stepCounts.map(([k,v])=>'<div class="rfd-bar"><span>'+esc(k)+'</span><div class="t"><span style="width:'+(v/stepMax*100)+'%"></span></div><span class="n">'+v+'</span></div>').join('') + '</div></div>' +
+      '</div>' +
+      '<div class="rfd-box"><h3>今日 SEL 小挑戰</h3>' + legend(LETTERS.map(L=>'選 '+L), chColors) +
+        '<div class="rfd-pair">' + chRows + '</div>' +
+        '<p class="rfd-note">括號內是作答人數（每人每題只算第一次）；右邊是「較成熟回應」的比例：D1 選 C 或 D、D2 選 C、D3 選 C、D4 選 C、D5 選 C 或 D。情境題容易看出理想答案，建議當作反思參考，不作為能力證明。</p>' +
       '</div>' +
     '</div>';
   }
