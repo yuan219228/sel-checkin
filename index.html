@@ -571,6 +571,28 @@
   .rf .rf-count{font-variant-numeric:tabular-nums;background:var(--clay-tint);color:var(--clay-dark);border-radius:999px;padding:2px 10px;font-weight:700;}
   @media (max-width:400px){ .rf .rf-opts.scale{grid-template-columns:repeat(3,minmax(0,1fr));} .rf .rf-ends{display:none;} }
   @media (min-width:900px){ .rf .rf-q > .rf-label{font-size:16px;} .rf .rf-opts.scale .rf-opt{font-size:14.5px;padding:12px 4px;} }
+
+  /* ---------- 小回顧：新增區塊 ---------- */
+  .rf .rf-group[hidden]{display:none !important;}
+  .rf .rf-sugg{display:inline-block;margin-left:6px;font-size:11.5px;font-weight:700;color:#6F6A48;background:var(--sage-tint);border-radius:999px;padding:1px 8px;vertical-align:2px;}
+  /* ---------- 今日 SEL 小挑戰 ---------- */
+  #scBox[hidden],#scTip[hidden]{display:none !important;}
+  .sc{margin-top:22px;background:var(--clay-tint);border-radius:var(--radius);padding:18px 18px 16px;display:flex;flex-direction:column;gap:12px;}
+  .sc-head{display:flex;align-items:center;gap:10px;}
+  .sc-head .bun{width:52px;height:52px;flex:none;vertical-align:0;}
+  .sc-eyebrow{font-size:12.5px;font-weight:700;color:var(--clay-dark);letter-spacing:.04em;}
+  .sc-title{font-family:"Noto Serif TC",serif;font-size:18px;font-weight:700;}
+  .sc-q{margin:0;font-size:15px;line-height:1.6;}
+  .sc-opts{display:flex;flex-direction:column;gap:8px;}
+  .sc-opt{display:flex;gap:10px;align-items:flex-start;text-align:left;border:1px solid var(--line);background:var(--paper);border-radius:var(--radius-sm);
+    padding:10px 12px;font:14.5px "Noto Sans TC",sans-serif;color:var(--ink);line-height:1.5;cursor:pointer;}
+  .sc-opt b{flex:none;width:24px;height:24px;border-radius:50%;background:var(--cream);display:grid;place-items:center;font-size:13px;color:var(--clay-dark);}
+  .sc-opt[aria-pressed="true"]{border-color:var(--clay);background:#FFF4E8;font-weight:500;}
+  .sc-opt[aria-pressed="true"] b{background:var(--clay);color:#fff;}
+  .sc-opt:focus-visible{outline:3px solid var(--clay-dark);outline-offset:2px;}
+  .sc-tip{background:var(--paper);border-radius:var(--radius-sm);padding:10px 14px;font-size:14px;line-height:1.6;color:var(--ink);border-left:4px solid var(--clay);}
+  .sc-tip b{color:var(--clay-dark);}
+  .sel-chip.today{background:var(--clay-tint);color:var(--clay-dark);font-weight:700;box-shadow:0 0 0 2px var(--clay) inset;}
 </style>
 </head>
 <body>
@@ -678,6 +700,15 @@
       <div class="rf-sec" id="rfSecB">
         <div class="rf-head"><svg class="bun" aria-hidden="true"><use href="#bun-manage"/></svg><div>自我管理<small>察覺之後，會不會做點什麼</small></div></div>
       </div>
+      <div class="rf-group" id="rfGrpC" hidden><div class="rf-divider"></div><div class="rf-sec" id="rfSecC">
+        <div class="rf-head"><svg class="bun" aria-hidden="true"><use href="#bun-social"/></svg><div>社會覺察<small>有沒有留意到身邊同事的狀態</small></div></div>
+      </div></div>
+      <div class="rf-group" id="rfGrpD" hidden><div class="rf-divider"></div><div class="rf-sec" id="rfSecD">
+        <div class="rf-head"><svg class="bun" aria-hidden="true"><use href="#bun-skill"/></svg><div>人際技巧<small>和不同職類同仁的互動</small></div></div>
+      </div></div>
+      <div class="rf-group" id="rfGrpE" hidden><div class="rf-divider"></div><div class="rf-sec" id="rfSecE">
+        <div class="rf-head"><svg class="bun" aria-hidden="true"><use href="#bun-decide"/></svg><div>負責任的決策<small>做困難決定時，會考慮哪些事</small></div></div>
+      </div></div>
       <div class="error-msg" id="err-reflect">還有題目沒有回答，標紅字的地方選一個就好。</div>
       <div class="btn-row">
         <button class="btn-ghost" onclick="showStep(1)">上一步</button>
@@ -789,7 +820,16 @@
         <p id="resultMsg">你已經完成一次情緒覺察，也為自己留下一小段喘息。</p>
       </div>
 
-      <div class="field" style="margin-top:18px;"><label>做完呼吸後，跟剛才比，你現在的心情是？</label><div class="grid-2" id="change-grid" style="grid-template-columns:repeat(3,1fr);margin-top:8px;"><div class="chip" data-value="更好"><span class="emoji"><svg class="bun" aria-hidden="true"><use href="#bun-happy"/></svg></span>比剛才更好</div><div class="chip" data-value="差不多"><span class="emoji"><svg class="bun" aria-hidden="true"><use href="#bun-calm"/></svg></span>差不多</div><div class="chip" data-value="沒那麼好"><span class="emoji"><svg class="bun" aria-hidden="true"><use href="#bun-sad"/></svg></span>沒那麼好</div></div><div class="error-msg" id="err-change">請選擇一個最接近的答案。</div></div>
+      <div class="field" style="margin-top:18px;"><label>做完呼吸後，跟剛才比，你現在的心情是？</label><div class="grid-2" id="change-grid" style="grid-template-columns:repeat(3,1fr);margin-top:8px;"><div class="chip" data-value="沒那麼好"><span class="emoji"><svg class="bun" aria-hidden="true"><use href="#bun-sad"/></svg></span>沒那麼好</div><div class="chip" data-value="差不多"><span class="emoji"><svg class="bun" aria-hidden="true"><use href="#bun-calm"/></svg></span>差不多</div><div class="chip" data-value="更好"><span class="emoji"><svg class="bun" aria-hidden="true"><use href="#bun-happy"/></svg></span>比剛才更好</div></div><div class="error-msg" id="err-change">請選擇一個最接近的答案。</div></div>
+
+      <div class="sc" id="scBox" hidden>
+        <div class="sc-head"><svg class="bun" aria-hidden="true"><use id="scBun" href="#bun-aware"/></svg>
+          <div><div class="sc-eyebrow">今日 SEL 小挑戰・<span id="scSkill"></span></div><div class="sc-title" id="scTitle"></div></div></div>
+        <p class="sc-q" id="scQ"></p>
+        <div class="sc-opts" id="scOpts" role="group" aria-labelledby="scQ"></div>
+        <div class="sc-tip" id="scTip" hidden></div>
+        <div class="error-msg" id="err-sc">選一個最接近你的做法就好，沒有對錯。</div>
+      </div>
 
       <div class="field" id="feedbackField" style="margin-top:18px;" hidden>
         <label for="in-feedback">如果可以，你希望單位或醫院提供什麼支持？（選填）</label>
@@ -863,10 +903,13 @@
         </div>
       </div>
       <div class="sel-tag-row">
-        <div class="sel-eyebrow">你剛剛練習的是 SEL 五大能力之一：</div>
+        <div class="sel-eyebrow" id="selEyebrow">你正在練習的 SEL 五大能力：</div>
         <div class="sel-abilities">
-          <span class="sel-chip"><svg class="bun" aria-hidden="true"><use href="#bun-aware"/></svg>自我覺察</span>
-          <span class="sel-chip"><svg class="bun" aria-hidden="true"><use href="#bun-manage"/></svg>自我管理</span>
+          <span class="sel-chip" data-skill="自我覺察"><svg class="bun" aria-hidden="true"><use href="#bun-aware"/></svg>自我覺察</span>
+          <span class="sel-chip" data-skill="自我管理"><svg class="bun" aria-hidden="true"><use href="#bun-manage"/></svg>自我管理</span>
+          <span class="sel-chip" data-skill="社會覺察"><svg class="bun" aria-hidden="true"><use href="#bun-social"/></svg>社會覺察</span>
+          <span class="sel-chip" data-skill="人際技巧"><svg class="bun" aria-hidden="true"><use href="#bun-skill"/></svg>人際技巧</span>
+          <span class="sel-chip" data-skill="負責任的決策"><svg class="bun" aria-hidden="true"><use href="#bun-decide"/></svg>負責任的決策</span>
         </div>
       </div>
       <div class="btn-row">
@@ -1157,12 +1200,14 @@
       moodChange: state.moodChange,
       valence: POS_MOODS.indexOf(state.moodBefore) >= 0 ? '正向' : '負向',
       feedback: document.getElementById('in-feedback').value.trim(),
-      reflection: state.reflection || null
+      reflection: state.reflection || null,
+      challenge: window.Challenge ? Challenge.payload() : null
     };
   }
 
   function submitForm(){
     if(!state.moodChange){ document.getElementById('err-change').classList.add('show'); document.getElementById('err-change').scrollIntoView({behavior:'smooth',block:'center'}); return; }
+    if(window.Challenge && !Challenge.validate()) return;
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
     btn.textContent = '送出中…';
@@ -2120,6 +2165,7 @@ void main(){
    ========================================================= */
 var Recap = (function(){
   const SCALE5 = ['從來沒有','偶爾','一半一半','常常','幾乎每次'];
+  const FREQ4 = ['0 次','1–2 次','3–5 次','6 次以上'];
   const QUESTIONS = [
     { id:'q1', sec:'A', type:'scale', opts:SCALE5, label:'過去一週，當你情緒起伏時，有沒有在當下察覺「我現在有情緒」？' },
     { id:'q2', sec:'A', type:'scale', opts:SCALE5, label:'過去一週，你有沒有注意到身體的壓力訊號？', note:'例如肩頸緊、胸口悶、呼吸變快' },
@@ -2131,12 +2177,25 @@ var Recap = (function(){
     { id:'q6', sec:'B', type:'single', opts:['沒有遇到這種情況','有遇到，但沒停下來','有停下來'], postOnly:true,
       label:'過去一週，你有沒有在快要發脾氣或說出後悔的話之前，先停下來過？' },
     { id:'q7', sec:'B', type:'text', postOnly:true, optional:true,
-      label:'能不能分享一次，你在工作中察覺到自己的情緒，並做了一些調整的經驗？', note:'選填，一兩句就好' }
+      label:'能不能分享一次，你在工作中察覺到自己的情緒，並做了一些調整的經驗？', note:'選填，一兩句就好' },
+    // 社會覺察、人際技巧：第 1、5 天前後對照
+    { id:'q8', sec:'C', type:'single', opts:FREQ4, days:['前測','第5天'], label:'過去一週，我主動問同事「你還好嗎？」的次數' },
+    { id:'q9', sec:'C', type:'single', opts:FREQ4, days:['前測','第5天'], suggested:true,
+      label:'過去一週，我注意到同事情緒和平常不一樣的次數', note:'例如比平常安靜或煩躁' },
+    { id:'q10', sec:'D', type:'single', opts:FREQ4, days:['前測','第5天'], label:'過去一週，我主動向其他職類同仁道謝或給予肯定的次數' },
+    { id:'q11', sec:'D', type:'scale', opts:SCALE5, days:['前測','第5天'], suggested:true, label:'過去一週，遇到意見不同時，我能先聽完對方的想法再回應' },
+    // 負責任的決策：冷靜評估（第 1、5 天前後對照）＋決策步驟勾選（第 5 天）
+    { id:'q13', sec:'E', type:'scale', opts:SCALE5, days:['前測','第5天'], label:'過去一週，遇到困難的工作決定時，我能冷靜評估後再行動' },
+    { id:'q12', sec:'E', type:'multi', days:['第5天'], exclusive:'以上都沒有，當下就決定了',
+      opts:['先蒐集更多資訊','請教同事或主管','考慮病人或家屬的意願','確認規範或流程','想過可能的後果','事後反思結果','以上都沒有，當下就決定了'],
+      label:'回想最近一次困難的工作決定，你做了哪些事？', note:'可以複選' }
   ];
+  // 第 1、5 天問 q1、q2、q4、q8–q11、q13；第 3 天問 q1–q7；第 5 天另加 q12
+  function shown(q){ return q.days ? q.days.indexOf(phase) >= 0 : !(q.postOnly && phase !== '第3天'); }
   const INTRO = {
-    '前測':'沒有標準答案，誠實回答就好。第 3 天和第 5 天會再問一次，看看有沒有不一樣。',
+    '前測':'沒有標準答案，誠實回答就好。之後會再問一次，看看有沒有不一樣。',
     '第3天':'你已經來了 3 天！跟第一次比起來，這幾天你的日常有沒有一點點改變？誠實回答就好。',
-    '第5天':'第 5 天了，謝謝你一路陪著自己。最後 3 題，看看這幾天有沒有什麼不一樣？'
+    '第5天':'第 5 天了，謝謝你一路陪著自己。最後一次小回顧，看看這幾天有沒有什麼不一樣？'
   };
   const EYEBROW = { '前測':'小回顧・第 1 次', '第3天':'小回顧・第 3 天', '第5天':'小回顧・第 5 天' };
   let phase = '';
@@ -2150,10 +2209,10 @@ var Recap = (function(){
     document.getElementById('rfIntro').textContent = INTRO[phase];
     document.getElementById('rfEyebrow').textContent = EYEBROW[phase];
     document.getElementById('err-reflect').classList.remove('show');
-    document.getElementById('rfTime').textContent = phase === '第3天' ? '大約 1 分鐘' : '只要 30 秒';
+    document.getElementById('rfTime').textContent = '大約 1 分鐘';
     let n = 0;
     QUESTIONS.forEach(q=>{
-      if(q.postOnly && phase !== '第3天') return;   // 第 1、5 天只問 3 題，第 3 天問 7 題
+      if(!shown(q)) return;
       n++;
       const box = el('div','rf-q'); box.dataset.q = q.id;
       const lab = el('div','rf-label', '<span class="rf-num">'+n+'.</span>'+q.label); lab.id = 'rf-lab-'+q.id;
@@ -2170,7 +2229,9 @@ var Recap = (function(){
           const b = el('button','rf-opt'); b.type = 'button'; b.textContent = o; b.setAttribute('aria-pressed','false');
           b.addEventListener('click', ()=>{
             if(q.type === 'multi'){
-              b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+              const on = b.getAttribute('aria-pressed') !== 'true';
+              b.setAttribute('aria-pressed', on ? 'true' : 'false');
+              if(on && q.exclusive) wrap.querySelectorAll('.rf-opt').forEach(x=>{ if(x !== b && (o === q.exclusive || x.textContent === q.exclusive)) x.setAttribute('aria-pressed','false'); });
               answers[q.id] = [...wrap.querySelectorAll('[aria-pressed="true"]')].map(x=>x.textContent);
             } else {
               wrap.querySelectorAll('.rf-opt').forEach(x=>x.setAttribute('aria-pressed', x===b ? 'true' : 'false'));
@@ -2184,14 +2245,15 @@ var Recap = (function(){
         box.appendChild(wrap);
         if(q.type === 'scale') box.appendChild(el('div','rf-ends','<span>很少</span><span>很常</span>'));
       }
-      document.getElementById(q.sec === 'A' ? 'rfSecA' : 'rfSecB').appendChild(box);
+      document.getElementById('rfSec' + q.sec).appendChild(box);
     });
+    ['C','D','E'].forEach(k=>{ document.getElementById('rfGrp' + k).hidden = !document.querySelector('#rfSec' + k + ' .rf-q'); });
     updateCount();
   }
 
   // 已回答幾題（選填題不算）
   function updateCount(){
-    const req = QUESTIONS.filter(q=>!q.optional && !(q.postOnly && phase !== '第3天'));
+    const req = QUESTIONS.filter(q=>!q.optional && shown(q));
     const done = req.filter(q=>{ const a = answers[q.id]; return a != null && !(Array.isArray(a) && !a.length); }).length;
     document.getElementById('rfCount').textContent = '已回答 ' + done + ' / ' + req.length;
   }
@@ -2212,13 +2274,14 @@ var Recap = (function(){
         phase = INTRO[p] ? p : '';
         state.reflection = null;
         document.getElementById('feedbackField').hidden = !phase;   // 第 1、3、5 天才問
+        if(window.Challenge) Challenge.setup(api.day);
         if(phase){ render(); currentStep = 1; showStep('reflect'); }
         else { currentStep = 2; showStep(2); }
       };
       setTimeout(function(){ go(''); }, 8000);   // 查太久就先跳過，不要卡住打卡
       google.script.run
-        .withSuccessHandler(function(r){ go(r && r.phase); })
-        .withFailureHandler(function(){ go(''); })
+        .withSuccessHandler(function(r){ api.day = (r && r.day) || 0; go(r && r.phase); })
+        .withFailureHandler(function(){ api.day = 0; go(''); })
         .getReflectionPhase(staffId);
     },
     next: function(){
@@ -2240,6 +2303,78 @@ var Recap = (function(){
     }
   };
   return api;
+})();
+</script>
+
+<script>
+/* =========================================================
+   今日 SEL 小挑戰：累積第 1～5 天各一題情境題（之後輪流），選完顯示包子小提醒
+   ========================================================= */
+var Challenge = (function(){
+  const SC = [
+    { id:'D1', skill:'自我覺察', bun:'aware', title:'情緒覺察',
+      q:'忙了一整天後，你發現自己對一位來問事情的人（服務對象或同事）語氣很差。你最可能：',
+      opts:['覺得是對方問題太多，沒有多想','事後有點自責，但很快就忘了','意識到是自己太累，先深呼吸，再用平常的語氣回應','意識到是自己太累，先請同事協助，等自己穩定再處理'],
+      tip:'累的時候語氣變差很正常，察覺到它，就是改變的開始。' },
+    { id:'D2', skill:'自我管理', bun:'manage', title:'情緒調適',
+      q:'主管在其他人面前指正你的錯誤，你覺得很丟臉，手上還有工作要完成。你最可能：',
+      opts:['先忍住，之後都不再提','當場解釋或反駁','先完成手上工作，找空檔穩定情緒，之後找主管私下談','心情很差，接下來的工作都受影響'],
+      tip:'先把情緒放一邊不是壓抑，是幫自己爭取冷靜的時間，之後再好好談。' },
+    { id:'D3', skill:'社會覺察', bun:'social', title:'同理心',
+      q:'一位平常很開朗的同事，這週常常沉默，工作上也出了幾個小錯。你最可能：',
+      opts:['沒有特別注意到','有注意到，但覺得不關我的事','私下關心，問他最近還好嗎','直接提醒他工作要小心'],
+      tip:'一句「你還好嗎？」，可能就是同事今天最需要的支持。' },
+    { id:'D4', skill:'人際技巧', bun:'skill', title:'溝通與衝突處理',
+      q:'有人（服務對象或其他單位同仁）當眾大聲質疑你們的工作出了問題，旁邊還有其他人在看。你最可能：',
+      opts:['請對方冷靜，說明這不是你的責任','先道歉，請對方不要生氣','請對方到旁邊，先聽他說完，再說明目前狀況與下一步','請主管或負責的人來處理'],
+      tip:'先聽完，對方的情緒常常就降了一半。' },
+    { id:'D5', skill:'負責任的決策', bun:'decide', title:'理性判斷',
+      q:'下班前，你發現一份資料可能有誤（例如醫囑、紀錄、報表或系統設定），確認要花半小時。你已經很累，接手的人也很忙。你最可能：',
+      opts:['先下班，請接手的人有空再確認','不確定是否真的有誤，先不處理','留下來確認清楚，再告知接手的人和主管','交接時清楚說明疑慮，和接手的人一起確認'],
+      tip:'累的時候更需要一個好方法：把疑慮說清楚，交給團隊一起確認。' }
+  ];
+  const LETTERS = ['A','B','C','D'];
+  let cur = null, answer = '';
+  const $ = id => document.getElementById(id);
+  function setup(day){
+    answer = '';
+    cur = day > 0 ? SC[(day - 1) % SC.length] : null;
+    $('scBox').hidden = !cur;
+    $('err-sc').classList.remove('show');
+    if(!cur) return;
+    $('scSkill').textContent = cur.skill;
+    document.querySelectorAll('.sel-chip[data-skill]').forEach(c=>c.classList.toggle('today', c.dataset.skill === cur.skill));
+    $('selEyebrow').textContent = '你正在練習的 SEL 五大能力（今天的小挑戰：' + cur.skill + '）：';
+    $('scTitle').textContent = cur.title;
+    $('scBun').setAttribute('href', '#bun-' + cur.bun);
+    $('scQ').textContent = cur.q;
+    $('scTip').hidden = true;
+    const box = $('scOpts'); box.innerHTML = '';
+    cur.opts.forEach((t, i)=>{
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'sc-opt'; b.setAttribute('aria-pressed','false');
+      const k = document.createElement('b'); k.textContent = LETTERS[i]; b.appendChild(k);
+      const sp = document.createElement('span'); sp.textContent = t; b.appendChild(sp);
+      b.addEventListener('click', ()=>{
+        answer = LETTERS[i];
+        box.querySelectorAll('.sc-opt').forEach(x=>x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+        $('err-sc').classList.remove('show');
+        $('scTip').innerHTML = '<b>包子小提醒：</b>';
+        $('scTip').appendChild(document.createTextNode(cur.tip));
+        $('scTip').hidden = false;
+      });
+      box.appendChild(b);
+    });
+  }
+  return {
+    setup: setup,
+    validate: function(){
+      if(!cur || answer) return true;
+      $('err-sc').classList.add('show');
+      $('scBox').scrollIntoView({behavior:'smooth', block:'center'});
+      return false;
+    },
+    payload: function(){ return cur && answer ? { id: cur.id, answer: answer } : null; }
+  };
 })();
 </script>
 </body>
